@@ -2,3 +2,4 @@ click
 requests
 beautifulsoup4
 colorama
+PyYAML

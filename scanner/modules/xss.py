@@ -1,15 +1,14 @@
 from scanner.modules.base import BaseScanner
-from scanner.core.crawler import Crawler
+
 from urllib.parse import urljoin
 
 class XSSScanner(BaseScanner):
-    def scan(self):
-        crawler = Crawler(self.target_url, self.session)
-        crawler.crawl(depth=1)
+    def scan(self, forms=None, urls=None):
+        target_forms = forms or []
         
         payload = "<script>alert('XSS')</script>"
         
-        for form in crawler.forms:
+        for form in target_forms:
             action = form['action']
             method = form['method']
             inputs = form['inputs']

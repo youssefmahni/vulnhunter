@@ -1,0 +1,16 @@
+target:
+  url: "http://testphp.vulnweb.com"
+  timeout: 10
+  threads: 5
+
+wordlists:
+  subdomains: "wordlists/subdomains.txt"
+  directories: "wordlists/directories.txt"
+  users: "wordlists/users.txt"
+  passwords: "wordlists/passwords.txt"
+
+scanners:
+  sqli:
+    payloads: "wordlists/sqli_payloads.txt"
+  xss:
+    payloads: "wordlists/xss_payloads.txt"

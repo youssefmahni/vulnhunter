@@ -1,23 +1,25 @@
 import requests
-from colorama import Fore, Style
+from scanner.core.config import ConfigManager
 
 class Requester:
     def __init__(self):
+        self.config = ConfigManager()
         self.session = requests.Session()
+        self.timeout = self.config.get('target.timeout', 10)
         self.session.headers.update({
-            'User-Agent': 'SecurityScannerCLI/1.0'
+            'User-Agent': 'AllSafe-Scanner/1.0'
         })
 
     def get(self, url, **kwargs):
         try:
-            return self.session.get(url, **kwargs, timeout=10)
-        except requests.RequestException as e:
-            print(f"{Fore.RED}[!] Error connecting to {url}: {e}{Style.RESET_ALL}")
+            return self.session.get(url, timeout=self.timeout, **kwargs)
+        except Exception as e:
+            print(f"[!] Error connecting to {url}: {e}")
             return None
 
-    def post(self, url, data=None, json=None, **kwargs):
+    def post(self, url, data=None, **kwargs):
         try:
-            return self.session.post(url, data=data, json=json, **kwargs, timeout=10)
-        except requests.RequestException as e:
-            print(f"{Fore.RED}[!] Error connecting to {url}: {e}{Style.RESET_ALL}")
+            return self.session.post(url, data=data, timeout=self.timeout, **kwargs)
+        except Exception as e:
+            print(f"[!] Error posting to {url}: {e}")
             return None

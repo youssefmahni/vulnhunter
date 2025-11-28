@@ -1,5 +1,5 @@
-import requests
 from abc import ABC, abstractmethod
+import requests
 
 class BaseScanner(ABC):
     def __init__(self, target_url, session=None):
@@ -8,16 +8,16 @@ class BaseScanner(ABC):
         self.vulnerabilities = []
 
     @abstractmethod
-    def scan(self):
+    def scan(self, forms=None, urls=None):
         """
         Perform the scan and return a list of vulnerabilities.
         """
         pass
 
-    def add_vulnerability(self, vuln_type, details, severity="Medium"):
+    def add_vulnerability(self, vuln_type, details, severity="Medium", url=None):
         self.vulnerabilities.append({
             "type": vuln_type,
             "details": details,
             "severity": severity,
-            "url": self.target_url
+            "url": url or self.target_url
         })

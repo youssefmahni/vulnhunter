@@ -1,16 +1,15 @@
 from scanner.modules.base import BaseScanner
-from scanner.core.crawler import Crawler
+
 from urllib.parse import urljoin
 
 class SQLInjectionScanner(BaseScanner):
-    def scan(self):
-        crawler = Crawler(self.target_url, self.session)
-        crawler.crawl(depth=1) # Shallow crawl for now
+    def scan(self, forms=None, urls=None):
+        target_forms = forms or []
         
         payloads = ["'", "\"", "' OR 1=1 --", "\" OR 1=1 --"]
         errors = ["syntax error", "mysql", "sql", "database error"]
 
-        for form in crawler.forms:
+        for form in target_forms:
             action = form['action']
             method = form['method']
             inputs = form['inputs']

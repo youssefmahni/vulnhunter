@@ -1,66 +1,122 @@
-# AllSafe - Web App Security Scanner
+# AllSafe - Advanced Web Application Security Scanner
 
-A modular, Python-based Command Line Interface tool for scanning web applications for common security vulnerabilities.
+AllSafe is a modular, configuration-driven web application security scanner designed to automate the penetration testing process. It follows a structured methodology divided into four distinct phases, ensuring comprehensive coverage from reconnaissance to exploitation.
 
-## Features
+## Key Features
 
-- **SQL Injection (SQLi) Scanning**: Detects potential SQL injection vulnerabilities by fuzzing parameters.
-- **Cross-Site Scripting (XSS) Scanning**: Identifies reflected XSS vulnerabilities.
-- **Security Header Analysis**: Checks for missing critical security headers (e.g., X-Frame-Options, CSP).
-- **Web Crawler**: Automatically discovers links and forms on the target website.
-- **Reporting**: Generates reports in JSON or text format.
+- **Multi-threaded Engine**: Fast scanning with configurable concurrency.
+- **Headless Crawling**: Uses Playwright to crawl JavaScript-heavy applications (SPAs).
+- **Advanced Reporting**: Generates detailed JSON and HTML reports.
+- **Modular Architecture**: Easy to extend with new modules.
+
+## Phases & Modules
+
+### Phase 1: Information Gathering (Reconnaissance)
+- **Subdomain Enumeration**: Passive enumeration using `crt.sh`.
+- **Tech Stack Fingerprinting**: Identifies server technologies and CMS.
+- **Directory Brute-forcing**: Discovers hidden directories and files.
+- **Spidering/Crawling**: Headless crawling to map the application structure (URLs and forms).
+- **Google Dorking**: Generates targeted dorks for manual recon.
+- **WAF Detection**: Detects Web Application Firewalls via headers and active payloads.
+
+### Phase 2: Configuration & Deployment Management
+- **SSL/TLS Testing**: Checks for weak SSL/TLS versions and cipher suites.
+- **Cloud Storage Enumeration**: Scans for open S3 and Azure buckets.
+- **Subdomain Takeover**: Detects dangling CNAME records.
+- **Security Headers**: Analyzes HTTP headers for security best practices.
+- **CORS Misconfiguration**: Tests for insecure CORS policies.
+
+### Phase 3: Identity & Access Management (IAM)
+- **Authentication Testing**: Identifies login forms and performs brute-force attacks.
+- **Session Management**: Analyzes cookies for security flags (Secure, HttpOnly).
+- **Authorization Checks**: Detects potential IDOR vulnerabilities.
+
+### Phase 4: Input Validation
+- **SQL Injection (SQLi)**: Tests for Error-based, Boolean-based Blind, and Time-based Blind SQLi.
+- **Cross-Site Scripting (XSS)**: Tests for reflected XSS.
+- **SSRF**: Checks for Server-Side Request Forgery.
+- **XXE**: Checks for XML External Entity vulnerabilities.
+- **Command Injection**: Tests for OS command injection.
 
 ## Installation
 
-1.  **Clone the repository:**
-    ```bash
-    git clone <repository-url>
-    cd scanner
-    ```
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/yourusername/allsafe.git
+   cd allsafe
+   ```
 
-2.  **Set up a virtual environment (recommended):**
-    ```bash
-    python3 -m venv venv
-    source venv/bin/activate  # On Windows: venv\Scripts\activate
-    ```
+2. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-3.  **Install dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
+3. **Install Playwright browsers:**
+   ```bash
+   playwright install chromium
+   ```
+
+4. **Make the script executable:**
+   ```bash
+   chmod +x allsafe
+   ```
+
+## Configuration
+
+AllSafe is driven by a central configuration file `config.yaml`. You can customize the target, timeouts, threads, and wordlist paths here.
+
+```yaml
+target:
+  url: "http://example.com"
+  timeout: 10
+  threads: 5  # Number of concurrent threads
+
+wordlists:
+  subdomains: "wordlists/subdomains.txt"
+  directories: "wordlists/directories.txt"
+  users: "wordlists/users.txt"
+  passwords: "wordlists/passwords.txt"
+
+scanners:
+  sqli:
+    payloads: "wordlists/sqli_payloads.txt"
+```
 
 ## Usage
 
-You can run the scanner using the `allsafe` script:
+Run the scanner by specifying the target URL and the desired phase.
 
+### Basic Usage
 ```bash
-python3 allsafe [OPTIONS] TARGET_URL
+./allsafe http://example.com --phase <phase_name>
 ```
 
-### Options
+### Phase Examples
 
-- `TARGET_URL`: The URL of the web application to scan (required).
-- `--scan-type TEXT`: Type of scan to perform. Options: `all` (default), `sqli`, `xss`, `headers`.
-- `--output TEXT`: Path to save the scan report (e.g., `report.json`).
-- `-h, --help`: Show the help message.
-
-### Examples
-
-**Run a full scan:**
+**1. Reconnaissance**
 ```bash
-python3 allsafe http://example.com
+./allsafe http://example.com --phase recon
 ```
 
-**Scan only for SQL Injection:**
+**2. Configuration Checks**
 ```bash
-python3 allsafe http://example.com --scan-type sqli
+./allsafe http://example.com --phase config
 ```
 
-**Save report to a file:**
+**3. IAM Testing**
 ```bash
-python3 allsafe http://example.com --output results.json
+./allsafe http://example.com --phase iam
 ```
+
+**4. Input Validation**
+```bash
+./allsafe http://example.com --phase input
+```
+
+## Reports
+
+After each scan, reports are automatically generated in the `reports/` directory in both JSON and HTML formats.
 
 ## Disclaimer
 
-**Usage of this tool for attacking targets without prior mutual consent is illegal.** It is the end user's responsibility to obey all applicable local, state, and federal laws. Developers assume no liability and are not responsible for any misuse or damage caused by this program.
+This tool is for educational and authorized testing purposes only. The author is not responsible for any misuse or damage caused by this tool. Always obtain proper authorization before scanning any target.

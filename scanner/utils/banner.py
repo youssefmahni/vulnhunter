@@ -2,6 +2,7 @@ from colorama import Fore, Style
 
 def print_banner():
     banner = r"""
+    {Fore.CYAN}
     ___   ____  _____       ____     
    /   | / / / / ___/____ _/ __/____ 
   / /| |/ / /  \__ \/ __ `/ /_/ _ \ 
@@ -9,5 +10,6 @@ def print_banner():
 /_/  |_\/_/  /____/\__,_/_/  \___/  
                                      
       AllSafe - Advanced Security Scanner
+    {Style.RESET_ALL}
     """
-    print(f"{Fore.RED}{banner}{Style.RESET_ALL}")
+    print(banner)
