@@ -1,7 +1,11 @@
 target:
   url: "http://testphp.vulnweb.com"
   timeout: 10
-  threads: 5
+  threads: 50
+
+bruteforce:
+  enabled: false
+  delay: 0.0
 
 crawler:
   depth: 2

@@ -64,7 +64,7 @@ class AuthScanner(BaseScanner):
             self.log("[*] No obvious login form found in crawled data.")
 
         # 2. Brute Force
-        if login_form and users_path and passwords_path and os.path.exists(users_path) and os.path.exists(passwords_path):
+        if config.get('bruteforce.enabled', True) and login_form and users_path and passwords_path and os.path.exists(users_path) and os.path.exists(passwords_path):
             self.log(f"[*] Starting brute-force attack on {login_form['action']}...")
             
             try:
@@ -73,43 +73,75 @@ class AuthScanner(BaseScanner):
                 with open(passwords_path, 'r', encoding='utf-8', errors='ignore') as f:
                     passwords = list(dict.fromkeys(line.strip() for line in f if line.strip()))
                 
+                import concurrent.futures
+                import time
+                
+                # Get thread count and delay from config
+                max_workers = config.get('target.threads', 10)
+                delay = config.get('bruteforce.delay', 0.0)
+                
+                # Create a list of all credentials to test
+                credentials = []
                 for user in users:
                     for password in passwords:
-                        data = {}
-                        for input_tag in login_form['inputs']:
-                            name = input_tag.get('name')
-                            if not name: continue
-                            
-                            if 'user' in name.lower() or 'email' in name.lower() or 'login' in name.lower():
-                                data[name] = user
-                            elif 'pass' in name.lower():
-                                data[name] = password
-                            else:
-                                data[name] = 'submit'
+                        credentials.append((user, password))
+                
+                self.log(f"[*] Testing {len(credentials)} credentials with {max_workers} threads...")
+                
+                found_valid = False
+                
+                def attempt_login(user, password):
+                    nonlocal found_valid
+                    if found_valid: return
+                    
+                    # Apply delay if configured
+                    if delay > 0:
+                        time.sleep(delay)
+                    
+                    data = {}
+                    for input_tag in login_form['inputs']:
+                        name = input_tag.get('name')
+                        if not name: continue
                         
-                        try:
-                            if login_form['method'] == 'post':
-                                res = self.session.post(login_form['action'], data=data, allow_redirects=False)
-                            else:
-                                res = self.session.get(login_form['action'], params=data, allow_redirects=False)
-                            
-                            # Success detection: Redirect or significant length change
-                            # This is heuristic and might need tuning
-                            if res.status_code in [301, 302]:
-                                location = res.headers.get('Location', '').lower()
-                                # False positive check: Redirecting back to login is usually a failure
-                                if 'login' in location or 'error' in location or 'fail' in location:
-                                    continue
-                                    
-                                self.log(f"{Fore.GREEN}[+] Potential Success: {user}:{password} (Redirect to {location}){Style.RESET_ALL}")
-                                self.add_vulnerability(
-                                    "Weak Credentials",
-                                    f"Valid credentials found: {user}:{password}",
-                                    "Critical",
-                                    url=login_form['action']
-                                )
-                                return # Stop after first success
-                        except Exception:
-                            pass
+                        if 'user' in name.lower() or 'email' in name.lower() or 'login' in name.lower():
+                            data[name] = user
+                        elif 'pass' in name.lower():
+                            data[name] = password
+                        else:
+                            data[name] = 'submit'
+                    
+                    try:
+                        # Use a fresh session for each attempt to avoid cookie collisions/state issues
+                        # But copy headers from the main session if needed (skipping for now for simplicity)
+                        import requests
+                        req_session = requests.Session()
+                        req_session.headers.update(self.session.headers)
+                        
+                        if login_form['method'] == 'post':
+                            res = req_session.post(login_form['action'], data=data, allow_redirects=False, timeout=10)
+                        else:
+                            res = req_session.get(login_form['action'], params=data, allow_redirects=False, timeout=10)
+                        
+                        # Success detection
+                        if res.status_code in [301, 302]:
+                            location = res.headers.get('Location', '').lower()
+                            if 'login' in location or 'error' in location or 'fail' in location:
+                                return
+                                
+                            self.log(f"{Fore.GREEN}[+] Potential Success: {user}:{password} (Redirect to {location}){Style.RESET_ALL}")
+                            self.add_vulnerability(
+                                "Weak Credentials",
+                                f"Valid credentials found: {user}:{password}",
+                                "Critical",
+                                url=login_form['action']
+                            )
+                            found_valid = True
+                    except Exception:
+                        pass
+
+                with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+                    futures = [executor.submit(attempt_login, u, p) for u, p in credentials]
+                    concurrent.futures.wait(futures)
+                    
             except Exception as e:
                 self.log(f"[!] Error during brute-force: {e}")

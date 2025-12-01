@@ -21,12 +21,13 @@ class SessionScanner(BaseScanner):
                         f"Cookie {cookie.name} missing Secure flag",
                         "Medium"
                     )
-                
-                # HttpOnly check is harder with requests.cookies as it parses them.
-                # We can check the Set-Cookie header raw string.
+
                 if 'httponly' not in str(cookie._rest).lower() and not cookie.has_nonstandard_attr('HttpOnly'):
-                     # This is a bit tricky with requests, simplifying for now
-                     pass
+                    self.add_vulnerability(
+                        "Insecure Cookie",
+                        f"Cookie {cookie.name} missing HttpOnly flag",
+                        "Medium"
+                    )
 
         except Exception as e:
             self.log(f"[!] Error analyzing sessions: {e}")
