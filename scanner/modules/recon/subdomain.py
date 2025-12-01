@@ -41,6 +41,7 @@ class SubdomainScanner(BaseScanner):
             print(f"[!] Error querying crt.sh: {e}")
 
         # Active Enumeration (Brute Force)
+        config = ConfigManager()
         wordlist_path = config.get('wordlists.subdomains')
         if wordlist_path:
             print(f"[*] Starting Active Enumeration using {wordlist_path}...")
