@@ -1,4 +1,4 @@
-from vulnhunter.modules.base import BaseScanner
+from modules.base import BaseScanner
 
 class CORSCheckScanner(BaseScanner):
     def scan(self, forms=None, urls=None):

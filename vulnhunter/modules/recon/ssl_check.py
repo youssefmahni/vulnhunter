@@ -1,4 +1,4 @@
-from vulnhunter.modules.base import BaseScanner
+from modules.base import BaseScanner
 import ssl
 import socket
 from urllib.parse import urlparse

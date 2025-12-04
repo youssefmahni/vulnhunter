@@ -2,22 +2,22 @@ import click
 from colorama import init, Fore, Style
 import concurrent.futures
 
-from vulnhunter.core.config import ConfigManager
-from vulnhunter.core.requester import Requester
-from vulnhunter.core.crawler import Crawler
-from vulnhunter.utils.banner import print_banner
-from vulnhunter.core.reporter import Reporter
+from core.config import ConfigManager
+from core.requester import Requester
+from core.crawler import Crawler
+from utils.banner import print_banner
+from core.reporter import Reporter
 
 # Recon modules
-from vulnhunter.modules.recon.basic_info import BasicInfoScanner
-from vulnhunter.modules.recon.waf_detect import WAFDetectScanner
-from vulnhunter.modules.recon.headers_check import HeadersCheckScanner
-from vulnhunter.modules.recon.ssl_check import SSLCheckScanner
-from vulnhunter.modules.recon.cors_check import CORSCheckScanner
+from modules.recon.basic_info import BasicInfoScanner
+from modules.recon.waf_detect import WAFDetectScanner
+from modules.recon.headers_check import HeadersCheckScanner
+from modules.recon.ssl_check import SSLCheckScanner
+from modules.recon.cors_check import CORSCheckScanner
 
 # Vuln modules
-from vulnhunter.modules.vuln.sqli import SQLIScanner
-from vulnhunter.modules.vuln.brute_force import BruteForceScanner
+from modules.vuln.sqli import SQLIScanner
+from modules.vuln.brute_force import BruteForceScanner
 
 init(autoreset=True)
 
