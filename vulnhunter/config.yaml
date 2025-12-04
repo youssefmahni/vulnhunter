@@ -6,6 +6,7 @@ target:
 wordlists:
   subdomains: "wordlists/subdomains.txt"
   directories: "wordlists/directories.txt"
+  files: "wordlists/files.txt"
   users: "wordlists/users.txt"
   passwords: "wordlists/passwords.txt"
   sqli_payloads: "wordlists/sqli_payloads.txt"

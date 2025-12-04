@@ -1,7 +1,8 @@
 class BaseScanner:
-    def __init__(self, target_url, session):
+    def __init__(self, target_url, session, config=None):
         self.target_url = target_url
         self.session = session
+        self.config = config
         self.vulnerabilities = []
 
     def scan(self, forms=None, urls=None):

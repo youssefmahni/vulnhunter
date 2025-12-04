@@ -50,11 +50,11 @@ def main(target_url):
     # Recon phase
     print(f"{Fore.YELLOW}[*] Running Reconnaissance Phase...{Style.RESET_ALL}")
     recon_scanners = [
-        BasicInfoScanner(target_url, requester.session),
-        WAFDetectScanner(target_url, requester.session),
-        HeadersCheckScanner(target_url, requester.session),
-        SSLCheckScanner(target_url, requester.session),
-        CORSCheckScanner(target_url, requester.session)
+        BasicInfoScanner(target_url, requester.session, config),
+        WAFDetectScanner(target_url, requester.session, config),
+        HeadersCheckScanner(target_url, requester.session, config),
+        SSLCheckScanner(target_url, requester.session, config),
+        CORSCheckScanner(target_url, requester.session, config)
     ]
     
     max_threads = config.get('target.threads', 5)
@@ -96,8 +96,8 @@ def main(target_url):
     # Vuln phase
     print(f"{Fore.YELLOW}[*] Running Vulnerability Testing Phase...{Style.RESET_ALL}")
     vuln_scanners = [
-        SQLIScanner(target_url, requester.session),
-        BruteForceScanner(target_url, requester.session)
+        SQLIScanner(target_url, requester.session, config),
+        BruteForceScanner(target_url, requester.session, config)
     ]
     
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_threads) as executor:
