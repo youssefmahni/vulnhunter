@@ -14,6 +14,7 @@ from modules.recon.waf_detect import WAFDetectScanner
 from modules.recon.headers_check import HeadersCheckScanner
 from modules.recon.ssl_check import SSLCheckScanner
 from modules.recon.cors_check import CORSCheckScanner
+from modules.recon.whois_info import WhoisScanner
 from modules.recon.dirb_scanner import DirbScanner
 
 # Vuln modules
@@ -54,7 +55,8 @@ def main(target_url):
         HeadersCheckScanner(target_url, requester.session, config),
         SSLCheckScanner(target_url, requester.session, config),
         CORSCheckScanner(target_url, requester.session, config),
-        DirbScanner(target_url, requester.session, config)
+        DirbScanner(target_url, requester.session, config),
+        WhoisScanner(target_url,requester.session,config)
     ]
     
     max_threads = config.get('target.threads', 5)

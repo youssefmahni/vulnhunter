@@ -16,6 +16,10 @@ crawler:
   depth: 2
   max_urls: 100
 
+
+env:
+  apiKey : "hoUJi9OEbO8kVm9FyRT7SQ==AYrzU1F6tPcUwMdS"
+
 dirb_scanner:
   threads: 10
   timeout: 5
