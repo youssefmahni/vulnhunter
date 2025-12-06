@@ -7,7 +7,7 @@ class CORSCheckScanner(BaseScanner):
     TEST_ORIGIN = 'https://evil.com'
     
     def scan(self, forms=None, urls=None):
-        print(f"[*] Checking CORS configuration on {self.target_url}")
+        self.logger.info(f"Checking CORS configuration on {self.target_url}")
         
         # We perform the most important check first: Arbitrary Origin Reflection
         self._test_arbitrary_reflection(self.target_url)
@@ -42,7 +42,7 @@ class CORSCheckScanner(BaseScanner):
                 "status": response.status_code
             }
         except Exception as e:
-            # print(f"[!] Error during CORS request: {e}")
+            # self.logger.error(f"Error during CORS request: {e}")
             return {}
 
     ## ----------------- CORE VULNERABILITY CHECKS -----------------
@@ -61,7 +61,7 @@ class CORSCheckScanner(BaseScanner):
                 "High"
             )
         else:
-            print(f"[+] Arbitrary origin check passed. ACAO: {acao}")
+            self.logger.info(f"Arbitrary origin check passed. ACAO: {acao}")
 
     def _test_credentials_support(self, url):
         """
@@ -87,7 +87,7 @@ class CORSCheckScanner(BaseScanner):
                 "High"
             )
         else:
-            print(f"[+] Credentials check passed. ACAO: {acao}, Credentials: {credentials}")
+            self.logger.info(f"Credentials check passed. ACAO: {acao}, Credentials: {credentials}")
 
     ## ----------------- SECONDARY/COMPREHENSIVE CHECKS -----------------
 
@@ -119,7 +119,7 @@ class CORSCheckScanner(BaseScanner):
 
     def _test_options_preflight(self, url):
         """Tests the OPTIONS preflight response for overly permissive configurations."""
-        print(f"[*] Testing OPTIONS Preflight on {url}")
+        self.logger.info(f"Testing OPTIONS Preflight on {url}")
         
         # Test the OPTIONS request with a non-whitelisted origin
         result = self._get_acao_header(url, self.TEST_ORIGIN, method='OPTIONS')
@@ -136,7 +136,7 @@ class CORSCheckScanner(BaseScanner):
                 )
         
         elif result.get('status') == 403:
-             print("[+] OPTIONS request blocked (403 Forbidden).")
+             self.logger.info("OPTIONS request blocked (403 Forbidden).")
         
         else:
-            print("[+] OPTIONS request did not return a 200/403 (Might not be supported or is filtered).")
+            self.logger.info("OPTIONS request did not return a 200/403 (Might not be supported or is filtered).")

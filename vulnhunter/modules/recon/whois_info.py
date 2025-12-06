@@ -24,7 +24,7 @@ class WhoisScanner(BaseScanner):
             return str(ts)
 
     def scan(self, forms=None, urls=None):
-        print(f"[*] Performing WHOIS lookup on {self.target_url}")
+        self.logger.info(f"Performing WHOIS lookup on {self.target_url}")
         try:
             domain = self.target_url.replace("http://", "").replace("https://", "").split("/")[0]
             url = f"https://api.api-ninjas.com/v1/whois?domain={domain}"
@@ -57,4 +57,4 @@ class WhoisScanner(BaseScanner):
                     self.add_vulnerability("Name Server", f"NS: {ns}", "Info")
 
         except Exception as e:
-            print(f"[!] Error in WHOIS scan: {e}")
+            self.logger.error(f"Error in WHOIS scan: {e}")

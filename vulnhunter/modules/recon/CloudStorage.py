@@ -19,7 +19,7 @@ class CloudStorage(BaseScanner):
     AWS_METADATA_URL = 'http://169.254.169.254/latest/meta-data/iam/security-credentials/'
     
     def scan(self, forms=None, urls=None):
-        print(f"[*] Starting Cloud Storage and SSRF check on {self.target_url}")
+        self.logger.info(f"Starting Cloud Storage and SSRF check on {self.target_url}")
         
         # --- 1. SSRF Check (Internal Misconfiguration) ---
         self._test_ssrf_metadata_exposure()
@@ -52,7 +52,7 @@ class CloudStorage(BaseScanner):
 
     def _test_cloud_permissions(self, bucket_url):
         """Tests a single cloud storage URL for public read and write access."""
-        print(f"  -> Testing permissions for bucket: {bucket_url}")
+        self.logger.info(f"Testing permissions for bucket: {bucket_url}")
         
         # Use the base URL for listing checks
         base_url = urlparse(bucket_url)._replace(path='/').geturl()
@@ -82,11 +82,11 @@ class CloudStorage(BaseScanner):
                     "High"
                 )
             else:
-                 print("  -> Read/List Check: Bucket is likely closed or empty.")
+                 self.logger.info("Read/List Check: Bucket is likely closed or empty.")
         elif response and response.status_code == 403:
-            print("  -> Read/List Check: Server correctly denies access (HTTP 403 Forbidden).")
+            self.logger.info("Read/List Check: Server correctly denies access (HTTP 403 Forbidden).")
         else:
-            print(f"  -> Read/List Check: Received status code {response.status_code if response else 'N/A'}.")
+            self.logger.info(f"Read/List Check: Received status code {response.status_code if response else 'N/A'}.")
 
     def _test_write_access(self, test_object_url):
         """Tests for public write access by attempting to upload a test file via PUT."""
@@ -109,17 +109,17 @@ class CloudStorage(BaseScanner):
                     "Critical"
                 )
             else:
-                print(f"  -> Write Check: Server correctly denies upload (Status: {response.status_code if response else 'N/A'}).")
+                self.logger.info(f"Write Check: Server correctly denies upload (Status: {response.status_code if response else 'N/A'}).")
         
         except Exception as e:
             # Handle connection errors or other issues
-            print(f"  -> Write Check: Error during PUT request (likely network or missing method): {e}")
+            self.logger.error(f"Write Check: Error during PUT request (likely network or missing method): {e}")
             
     def _test_ssrf_metadata_exposure(self):
         """Tests for Server-Side Request Forgery (SSRF) by attempting to access the internal AWS metadata endpoint."""
         
-        print(f"[*] Checking for Scanner-side access to AWS Metadata Endpoint: {self.AWS_METADATA_URL}")
-        print("  -> Note: This test reveals if the scanner's host (or a vulnerable application) can access internal cloud resources.")
+        self.logger.info(f"Checking for Scanner-side access to AWS Metadata Endpoint: {self.AWS_METADATA_URL}")
+        self.logger.info("Note: This test reveals if the scanner's host (or a vulnerable application) can access internal cloud resources.")
         
         try:
             # This is a low-latency, non-internet request, so a short timeout is fine
@@ -136,9 +136,9 @@ class CloudStorage(BaseScanner):
                         "Critical"
                     )
                 else:
-                    print("  -> SSRF Check: Endpoint reachable, but response was not the expected metadata.")
+                    self.logger.info("SSRF Check: Endpoint reachable, but response was not the expected metadata.")
             else:
-                print("  -> SSRF Check: Metadata endpoint is unreachable or denied (Expected on non-AWS hosts).")
+                self.logger.info("SSRF Check: Metadata endpoint is unreachable or denied (Expected on non-AWS hosts).")
 
         except Exception as e:
-            print(f"  -> SSRF Check: Request failed (Expected if not running on AWS/VPC). Error: {e}")
+            self.logger.info(f"SSRF Check: Request failed (Expected if not running on AWS/VPC). Error: {e}")

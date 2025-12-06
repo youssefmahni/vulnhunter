@@ -40,7 +40,7 @@ class WAFDetectScanner(BaseScanner):
     }
 
     def scan(self, forms=None, urls=None):
-        print(f"[*] Detecting WAF on {self.target_url}")
+        self.logger.info(f"Detecting WAF on {self.target_url}")
 
         # Use a classic injection/XSS payload for the active check
         payload = "\" or 1=1 -- <script>alert('WAF')</script>"
@@ -58,7 +58,7 @@ class WAFDetectScanner(BaseScanner):
                     "Info"
                 )
             else:
-                print(f"[+] Active check status: {res.status_code}. No immediate block detected.")
+                self.logger.success(f"Active check status: {res.status_code}. No immediate block detected.")
 
             # 2. Passive Check: Check headers for WAF signatures and versions
             detected_waf = self._passive_check(res.headers)
@@ -74,7 +74,7 @@ class WAFDetectScanner(BaseScanner):
             return False
 
         except Exception as e:
-            print(f"(!) Error detecting WAF: {e}")
+            self.logger.error(f"Error detecting WAF: {e}")
             return False
 
     def _passive_check(self, headers):
