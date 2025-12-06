@@ -20,6 +20,7 @@ from modules.recon.dns_scanner import DNSScanner
 
 from modules.recon.dirb_scanner import DirbScanner
 from modules.recon.CloudStorage import CloudStorage
+from modules.recon.techstack import TechStackScanner
 
 # Vuln modules
 from modules.vuln.sqli import SQLIScanner
@@ -55,15 +56,16 @@ def main(target_url):
     logger.warning("Running Reconnaissance Phase...")
     recon_scanners = [
 
-        BasicInfoScanner(target_url, requester.session, config),
-        WAFDetectScanner(target_url, requester.session, config),
-        HeadersCheckScanner(target_url, requester.session, config),
-        SSLCheckScanner(target_url, requester.session, config),
-        CORSCheckScanner(target_url, requester.session, config),
-        DirbScanner(target_url, requester.session, config),
-        WhoisScanner(target_url,requester.session,config),
-        DNSScanner(target_url,requester.session,config),
-        CloudStorage(target_url,requester.session,config)
+        #BasicInfoScanner(target_url, requester.session, config),
+        #WAFDetectScanner(target_url, requester.session, config),
+        #HeadersCheckScanner(target_url, requester.session, config),
+        #SSLCheckScanner(target_url, requester.session, config),
+        #CORSCheckScanner(target_url, requester.session, config),
+        #DirbScanner(target_url, requester.session, config),
+        #WhoisScanner(target_url,requester.session,config),
+       # DNSScanner(target_url,requester.session,config),
+        TechStackScanner(target_url,requester.session,config),
+        #CloudStorage(target_url,requester.session,config)
         
     ]
     
@@ -97,11 +99,11 @@ def main(target_url):
     
     # Crawl for vuln testing
     logger.info("Crawling for forms and URLs...")
-    crawler = Crawler(target_url, requester)
-    crawler.crawl()
-    forms = crawler.forms
-    urls = list(crawler.urls)
-    logger.info(f"Found {len(urls)} URLs and {len(forms)} forms.")
+    #crawler = Crawler(target_url, requester)
+    #crawler.crawl()
+    #forms = crawler.forms
+    #urls = list(crawler.urls)
+    #logger.info(f"Found {len(urls)} URLs and {len(forms)} forms.")
     
     # Vuln phase
     logger.warning("Running Vulnerability Testing Phase...")
