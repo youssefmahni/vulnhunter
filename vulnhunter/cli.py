@@ -65,7 +65,7 @@ def main(target_url):
         CORSCheckScanner(target_url, requester.session, config),
         DirbScanner(target_url, requester.session, config),
         WhoisScanner(target_url,requester.session,config),
-       DNSScanner(target_url,requester.session,config),
+        DNSScanner(target_url,requester.session,config),
         TechStackScanner(target_url,requester.session,config),
         CloudStorage(target_url,requester.session,config)
         
