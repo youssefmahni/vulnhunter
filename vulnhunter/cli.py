@@ -15,6 +15,7 @@ from modules.recon.headers_check import HeadersCheckScanner
 from modules.recon.ssl_check import SSLCheckScanner
 from modules.recon.cors_check import CORSCheckScanner
 from modules.recon.whois_info import WhoisScanner
+from modules.recon.dns_scanner import DNSScanner
 
 # Vuln modules
 from modules.vuln.sqli import SQLIScanner
@@ -56,7 +57,8 @@ def main(target_url):
         #HeadersCheckScanner(target_url, requester.session, config),
         #SSLCheckScanner(target_url, requester.session, config),
         #CORSCheckScanner(target_url, requester.session, config)
-        WhoisScanner(target_url,requester.session,config),
+        #WhoisScanner(target_url,requester.session,config),
+        DNSScanner(target_url,requester.session,config)
         
     ]
     
@@ -99,8 +101,8 @@ def main(target_url):
     # Vuln phase
     print(f"{Fore.YELLOW}[*] Running Vulnerability Testing Phase...{Style.RESET_ALL}")
     vuln_scanners = [
-        SQLIScanner(target_url, requester.session, config),
-        BruteForceScanner(target_url, requester.session, config)
+      #  SQLIScanner(target_url, requester.session, config),
+       # BruteForceScanner(target_url, requester.session, config)
     ]
     
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_threads) as executor:

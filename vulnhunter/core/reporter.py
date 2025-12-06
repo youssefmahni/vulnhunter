@@ -13,7 +13,7 @@ class Reporter:
             "timestamp": self.timestamp,
             "vulnerabilities": self.vulnerabilities
         }
-        with open(f"{output_dir}/report.json", 'w') as f:
+        with open(f"{output_dir}/report.json", 'w',encoding='utf-8') as f:
             json.dump(report, f, indent=4)
 
     def generate_html(self, output_dir="reports"):
@@ -31,5 +31,5 @@ class Reporter:
         </body>
         </html>
         """
-        with open(f"{output_dir}/report.html", 'w') as f:
+        with open(f"{output_dir}/report.html", 'w',encoding='utf-8') as f:
             f.write(html)
