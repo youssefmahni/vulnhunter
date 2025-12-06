@@ -58,16 +58,16 @@ def main(target_url):
     logger.warning("Running Reconnaissance Phase...")
     recon_scanners = [
 
-        #BasicInfoScanner(target_url, requester.session, config),
-        #WAFDetectScanner(target_url, requester.session, config),
-        #HeadersCheckScanner(target_url, requester.session, config),
-        #SSLCheckScanner(target_url, requester.session, config),
-        #CORSCheckScanner(target_url, requester.session, config),
-        #DirbScanner(target_url, requester.session, config),
-        #WhoisScanner(target_url,requester.session,config),
-       # DNSScanner(target_url,requester.session,config),
+        BasicInfoScanner(target_url, requester.session, config),
+        WAFDetectScanner(target_url, requester.session, config),
+        HeadersCheckScanner(target_url, requester.session, config),
+        SSLCheckScanner(target_url, requester.session, config),
+        CORSCheckScanner(target_url, requester.session, config),
+        DirbScanner(target_url, requester.session, config),
+        WhoisScanner(target_url,requester.session,config),
+       DNSScanner(target_url,requester.session,config),
         TechStackScanner(target_url,requester.session,config),
-        #CloudStorage(target_url,requester.session,config)
+        CloudStorage(target_url,requester.session,config)
         
         
     ]
