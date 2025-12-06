@@ -1,5 +1,4 @@
 import click
-from colorama import init, Fore, Style
 import concurrent.futures
 
 from core.config import ConfigManager
@@ -7,6 +6,7 @@ from core.requester import Requester
 from core.crawler import Crawler
 from utils.banner import print_banner
 from core.reporter import Reporter
+from core.logger import logger
 
 # Recon modules
 from modules.recon.basic_info import BasicInfoScanner
@@ -15,13 +15,15 @@ from modules.recon.headers_check import HeadersCheckScanner
 from modules.recon.ssl_check import SSLCheckScanner
 from modules.recon.cors_check import CORSCheckScanner
 from modules.recon.whois_info import WhoisScanner
+
 from modules.recon.dns_scanner import DNSScanner
+
+from modules.recon.dirb_scanner import DirbScanner
+from modules.recon.CloudStorage import CloudStorage
 
 # Vuln modules
 from modules.vuln.sqli import SQLIScanner
 from modules.vuln.brute_force import BruteForceScanner
-
-init(autoreset=True)
 
 @click.command()
 @click.argument('target_url', required=True)
@@ -32,33 +34,36 @@ def main(target_url):
     # Load configuration
     try:
         config = ConfigManager()
-        print(f"{Fore.BLUE}[*] Configuration loaded successfully.{Style.RESET_ALL}")
+        logger.info("Configuration loaded successfully.")
     except Exception as e:
-        print(f"{Fore.RED}[!] Error loading configuration: {e}{Style.RESET_ALL}")
+        logger.error(f"Error loading configuration: {e}")
         return
 
     print_banner()
     
-    print(f"{Fore.BLUE}[*] Starting scan on {target_url}{Style.RESET_ALL}")
+    logger.info(f"Starting scan on {target_url}")
     
     requester = Requester()
     
     # Verify connectivity
     response = requester.get(target_url)
     if not response:
-        print(f"{Fore.RED}[!] Could not access target. Exiting.{Style.RESET_ALL}")
+        logger.error("Could not access target. Exiting.")
         return
 
     # Recon phase
-    print(f"{Fore.YELLOW}[*] Running Reconnaissance Phase...{Style.RESET_ALL}")
+    logger.warning("Running Reconnaissance Phase...")
     recon_scanners = [
-        #BasicInfoScanner(target_url, requester.session, config),
-        #WAFDetectScanner(target_url, requester.session, config),
-        #HeadersCheckScanner(target_url, requester.session, config),
-        #SSLCheckScanner(target_url, requester.session, config),
-        #CORSCheckScanner(target_url, requester.session, config)
-        #WhoisScanner(target_url,requester.session,config),
-        DNSScanner(target_url,requester.session,config)
+
+        BasicInfoScanner(target_url, requester.session, config),
+        WAFDetectScanner(target_url, requester.session, config),
+        HeadersCheckScanner(target_url, requester.session, config),
+        SSLCheckScanner(target_url, requester.session, config),
+        CORSCheckScanner(target_url, requester.session, config),
+        DirbScanner(target_url, requester.session, config),
+        WhoisScanner(target_url,requester.session,config),
+        DNSScanner(target_url,requester.session,config),
+        CloudStorage(target_url,requester.session,config)
         
     ]
     
@@ -71,35 +76,35 @@ def main(target_url):
             try:
                 future.result()
             except Exception as e:
-                print(f"{Fore.RED}[!] Exception in recon scanner: {e}{Style.RESET_ALL}")
+                logger.error(f"Exception in recon scanner: {e}")
     
     # Check for WAF
     waf_detected = any(vuln['type'] == 'WAF Detected (Active)' or vuln['type'] == 'WAF Detected (Passive)' 
                       for scanner in recon_scanners for vuln in scanner.vulnerabilities)
     
     if waf_detected:
-        print(f"{Fore.RED}[!] WAF Detected!{Style.RESET_ALL}")
+        logger.error("WAF Detected!")
         if not click.confirm("Continue with vulnerability testing?"):
-            print(f"{Fore.BLUE}[*] Generating recon-only report...{Style.RESET_ALL}")
+            logger.info("Generating recon-only report...")
             all_vulns = []
             for scanner in recon_scanners:
                 all_vulns.extend(scanner.vulnerabilities)
             reporter = Reporter(all_vulns)
             reporter.generate_json()
             reporter.generate_html()
-            print(f"{Fore.GREEN}[+] Recon report saved.{Style.RESET_ALL}")
+            logger.success("Recon report saved.")
             return
     
     # Crawl for vuln testing
-    print(f"{Fore.BLUE}[*] Crawling for forms and URLs...{Style.RESET_ALL}")
+    logger.info("Crawling for forms and URLs...")
     crawler = Crawler(target_url, requester)
     crawler.crawl()
     forms = crawler.forms
     urls = list(crawler.urls)
-    print(f"{Fore.BLUE}[*] Found {len(urls)} URLs and {len(forms)} forms.{Style.RESET_ALL}")
+    logger.info(f"Found {len(urls)} URLs and {len(forms)} forms.")
     
     # Vuln phase
-    print(f"{Fore.YELLOW}[*] Running Vulnerability Testing Phase...{Style.RESET_ALL}")
+    logger.warning("Running Vulnerability Testing Phase...")
     vuln_scanners = [
       #  SQLIScanner(target_url, requester.session, config),
        # BruteForceScanner(target_url, requester.session, config)
@@ -113,20 +118,20 @@ def main(target_url):
             try:
                 future.result()
             except Exception as e:
-                print(f"{Fore.RED}[!] Exception in vuln scanner: {e}{Style.RESET_ALL}")
+                logger.error(f"Exception in vuln scanner: {e}")
     
     # Collect all vulnerabilities
     all_vulns = []
     for scanner in recon_scanners + vuln_scanners:
         all_vulns.extend(scanner.vulnerabilities)
         
-    print(f"\n{Fore.GREEN}[+] Scan completed!{Style.RESET_ALL}")
+    logger.success("Scan completed!")
     if all_vulns:
-        print(f"{Fore.RED}[!] Found {len(all_vulns)} issues:{Style.RESET_ALL}")
+        logger.error(f"Found {len(all_vulns)} issues:")
         for vuln in all_vulns:
-            print(f" - [{vuln['severity']}] {vuln['type']}: {vuln['details']}")
+            logger.raw(f" - [{vuln['severity']}] {vuln['type']}: {vuln['details']}")
     else:
-        print(f"{Fore.GREEN}[+] No issues found.{Style.RESET_ALL}")
+        logger.success("No issues found.")
 
     # Generate reports
     reporter = Reporter(all_vulns)

@@ -2,7 +2,7 @@ from modules.base import BaseScanner
 
 class HeadersCheckScanner(BaseScanner):
     def scan(self, forms=None, urls=None):
-        print(f"[*] Checking security headers on {self.target_url}")
+        self.logger.info(f"Checking security headers on {self.target_url}")
         
         try:
             response = self.session.get(self.target_url)
@@ -25,7 +25,7 @@ class HeadersCheckScanner(BaseScanner):
                         "Low"
                     )
                 else:
-                    print(f"[+] Found {header}")
+                    self.logger.success(f"Found {header}")
                     
         except Exception as e:
-            print(f"[!] Error checking headers: {e}")
+            self.logger.error(f"Error checking headers: {e}")

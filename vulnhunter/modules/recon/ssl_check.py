@@ -2,41 +2,109 @@ from modules.base import BaseScanner
 import ssl
 import socket
 from urllib.parse import urlparse
+from datetime import datetime
 
 class SSLCheckScanner(BaseScanner):
     def scan(self, forms=None, urls=None):
-        print(f"[*] Checking SSL/TLS on {self.target_url}")
+        self.logger.info(f"Checking SSL/TLS on {self.target_url}")
         
-        domain = urlparse(self.target_url).netloc
+        parsed = urlparse(self.target_url)
+        domain = parsed.hostname
+        port = parsed.port or 443
+        
         if not domain:
-            print("[!] Invalid domain for SSL check")
+            self.logger.error("Invalid domain for SSL check")
             return
         
+        context = ssl.create_default_context()
+        context.check_hostname = True
+        context.verify_mode = ssl.CERT_REQUIRED
+        
         try:
-            context = ssl.create_default_context()
-            with socket.create_connection((domain, 443), timeout=10) as sock:
+            # Try secure connection first
+            with socket.create_connection((domain, port), timeout=10) as sock:
                 with context.wrap_socket(sock, server_hostname=domain) as ssock:
-                    cert = ssock.getpeercert()
-                    cipher = ssock.cipher()
-                    
-                    print(f"[+] SSL Version: {ssock.version()}")
-                    print(f"[+] Cipher: {cipher[0]}")
-                    
-                    if ssock.version() in ['TLSv1', 'TLSv1.1']:
-                        self.add_vulnerability(
-                            "Weak TLS Version",
-                            f"Server supports {ssock.version()}",
-                            "Medium"
-                        )
-                    
-                    # Certificate info
-                    issuer = cert.get('issuer')
-                    if issuer:
-                        self.add_vulnerability(
-                            "Certificate Issuer",
-                            f"Issuer: {issuer}",
-                            "Info"
-                        )
-                        
-        except Exception as e:
-            print(f"[!] SSL Error: {e}")
+                    self._analyze_connection(ssock)
+        except (ssl.SSLCertVerificationError, ssl.SSLError, socket.error) as e:
+            self.logger.warning(f"Secure connection failed: {e}")
+            self.logger.info("Retrying with verification disabled to extract certificate info...")
+            
+            self.add_vulnerability(
+                "SSL/TLS Connection Issue",
+                f"Could not establish secure connection: {e}",
+                "Low"
+            )
+
+            # Retry without verification
+            try:
+                context = ssl.create_default_context()
+                context.check_hostname = False
+                context.verify_mode = ssl.CERT_NONE
+                
+                with socket.create_connection((domain, port), timeout=10) as sock:
+                    with context.wrap_socket(sock, server_hostname=domain) as ssock:
+                        self._analyze_connection(ssock, verified=False)
+            except Exception as e2:
+                self.logger.error(f"Failed to connect even without verification: {e2}")
+
+    def _analyze_connection(self, ssock, verified=True):
+        cert = ssock.getpeercert(binary_form=not verified)
+
+        cipher = ssock.cipher()
+        version = ssock.version()
+        
+        self.logger.success(f"SSL Version: {version}")
+        self.logger.success(f"Cipher: {cipher[0]}")
+        
+        if version in ['TLSv1', 'TLSv1.1']:
+            self.add_vulnerability(
+                "Weak TLS Version",
+                f"Server supports {version}",
+                "Medium"
+            )
+            
+        if not verified:
+             self.add_vulnerability(
+                "Self-Signed or Invalid Certificate",
+                "Certificate validation failed (possibly self-signed or name mismatch)",
+                "Medium"
+            )
+        
+        # If we have a verified cert, we can check expiry
+        if verified:
+            cert = ssock.getpeercert()
+            self._check_cert_details(cert)
+
+    def _check_cert_details(self, cert):
+        # Subject
+        subject = dict(x[0] for x in cert['subject'])
+        common_name = subject.get('commonName')
+        self.logger.success(f"Subject: {common_name}")
+        
+        # Issuer
+        issuer = dict(x[0] for x in cert['issuer'])
+        issuer_name = issuer.get('commonName') or issuer.get('organizationName')
+        self.logger.success(f"Issuer: {issuer_name}")
+        
+        # Expiry
+        not_after_str = cert['notAfter']
+        # Format: May 26 23:59:59 2029 GMT
+        try:
+            not_after = datetime.strptime(not_after_str, "%b %d %H:%M:%S %Y %Z")
+            if datetime.utcnow() > not_after:
+                 self.add_vulnerability(
+                    "Expired Certificate",
+                    f"Certificate expired on {not_after_str}",
+                    "High"
+                )
+            else:
+                days_left = (not_after - datetime.utcnow()).days
+                self.logger.success(f"Certificate expires in {days_left} days")
+                if days_left < 30:
+                    self.add_vulnerability(
+                        "Certificate Expiring Soon",
+                        f"Certificate expires in {days_left} days",
+                        "Low"
+                    )
+        except Exception:
+            pass

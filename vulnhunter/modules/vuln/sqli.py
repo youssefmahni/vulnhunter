@@ -3,7 +3,7 @@ import os
 
 class SQLIScanner(BaseScanner):
     def scan(self, forms=None, urls=None):
-        print(f"[*] Testing SQL Injection on {self.target_url}")
+        self.logger.info(f"Testing SQL Injection on {self.target_url}")
         
         payloads = self.load_payloads("wordlists/sqli_payloads.txt")
         

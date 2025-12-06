@@ -1,9 +1,12 @@
+from core.logger import logger
+
 class BaseScanner:
     def __init__(self, target_url, session, config=None):
         self.target_url = target_url
         self.session = session
         self.config = config
         self.vulnerabilities = []
+        self.logger = logger
 
     def scan(self, forms=None, urls=None):
         raise NotImplementedError("Subclasses must implement scan method")

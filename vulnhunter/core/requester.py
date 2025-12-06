@@ -1,10 +1,14 @@
 import requests
 from urllib.parse import urljoin
+import urllib3
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 class Requester:
     def __init__(self, timeout=10, user_agent="VulnHunter/1.0"):
         self.session = requests.Session()
         self.session.headers.update({"User-Agent": user_agent})
+        self.session.verify = False
         self.timeout = timeout
 
     def get(self, url, **kwargs):

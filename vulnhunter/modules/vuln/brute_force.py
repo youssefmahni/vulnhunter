@@ -3,7 +3,7 @@ import os
 
 class BruteForceScanner(BaseScanner):
     def scan(self, forms=None, urls=None):
-        print(f"[*] Testing brute force on login forms at {self.target_url}")
+        self.logger.info(f"Testing brute force on login forms at {self.target_url}")
 
         if not forms:
             return

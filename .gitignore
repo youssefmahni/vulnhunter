@@ -1,7 +1,7 @@
 __pycache__/
 *.pyc
 venv/
-*.json
+vulnhunter/reports
 .DS_Store
 env/
 vulnhunter/reports/*

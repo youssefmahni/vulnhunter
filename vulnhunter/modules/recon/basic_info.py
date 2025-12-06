@@ -2,7 +2,7 @@ from modules.base import BaseScanner
 
 class BasicInfoScanner(BaseScanner):
     def scan(self, forms=None, urls=None):
-        print(f"[*] Gathering basic information on {self.target_url}")
+        self.logger.info(f"Gathering basic information on {self.target_url}")
         
         try:
             response = self.session.get(self.target_url)
@@ -45,4 +45,4 @@ class BasicInfoScanner(BaseScanner):
                 self.add_vulnerability("OS Detected", "Linux", "Info")
                 
         except Exception as e:
-            print(f"[!] Error in basic info scan: {e}")
+            self.logger.error(f"Error in basic info scan: {e}")
