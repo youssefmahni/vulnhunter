@@ -43,7 +43,7 @@ class XSSScanner(BaseScanner):
                     # SAFE text (escaped to prevent execution in HTML)
                     safe_desc = html.escape(raw_desc)
 
-                    self.add_vulnerability("Cross-Site Scripting (XSS)", safe_desc, "Medium")
+                    self.add_vulnerability("Cross-Site Scripting (XSS)", safe_desc, "High")
 
         # -------------------------
         # 2. URL XSS TESTING
@@ -71,7 +71,7 @@ class XSSScanner(BaseScanner):
                     # SAFE text (no XSS execution)
                     safe_desc = html.escape(raw_desc)
 
-                    self.add_vulnerability("Cross-Site Scripting (XSS)", safe_desc, "Medium")
+                    self.add_vulnerability("Cross-Site Scripting (XSS)", safe_desc, "High")
 
     # ============================
     # LOAD PAYLOADS

@@ -95,4 +95,5 @@ class SSTIScanner(BaseScanner):
                 self.VULN_SEVERITY,
                 location_detail
             )
+            
             print(f"{Fore.RED}[!] SSTI VULNERABILITY FOUND: {engine} - {location_detail}{Style.RESET_ALL}")

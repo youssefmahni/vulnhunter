@@ -28,7 +28,7 @@ class NoSQLIScanner(BaseScanner):
     ]
 
     VULN_TYPE = "NoSQL Injection (Auth Bypass)"
-    VULN_SEVERITY = "Critical"
+    VULN_SEVERITY = "High"
     AUTH_SUCCESS_SIG = "Welcome, admin" 
     AUTH_SUCCESS_STATUS = [302, 301] 
     
