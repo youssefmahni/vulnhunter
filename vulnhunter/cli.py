@@ -15,19 +15,21 @@ from modules.recon.headers_check import HeadersCheckScanner
 from modules.vuln.ssl_check import SSLCheckScanner
 from modules.vuln.cors_check import CORSCheckScanner
 from modules.recon.whois_info import WhoisScanner
-
 from modules.recon.dns_scanner import DNSScanner
-
 from modules.recon.dirb_scanner import DirbScanner
 from modules.recon.CloudStorage import CloudStorage
 
 # Vuln modules
 from modules.vuln.sqli import SQLIScanner
+from modules.vuln.nosqli import NoSQLIScanner
 from modules.vuln.brute_force import BruteForceScanner
 from modules.vuln.open_redirect import OpenRedirectScanner
 from modules.vuln.xxe import XXEScanner
 from modules.vuln.ssrf import SSRFScanner
 from modules.vuln.crlf import CRLFScanner
+from modules.vuln.ssti import SSTIScanner
+from modules.vuln.lfi import LFIScanner
+from modules.vuln.rfi import RFIScanner
 
 @click.command()
 @click.argument('target_url', required=True)
@@ -114,6 +116,12 @@ def main(target_url):
        XXEScanner(target_url, requester.session, config),
        SSRFScanner(target_url, requester.session, config),
        CRLFScanner(target_url, requester.session, config)
+       SQLIScanner(target_url, requester.session, config),
+       NoSQLIScanner(target_url, requester.session, config),
+       BruteForceScanner(target_url, requester.session, config),
+       SSTIScanner(target_url, requester.session, config),
+       LFIScanner(target_url, requester.session, config),
+       RFIScanner(target_url, requester.session, config)
     ]
     
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_threads) as executor:
