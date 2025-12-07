@@ -11,6 +11,10 @@ wordlists:
   passwords: "wordlists/passwords.txt"
   sqli_payloads: "wordlists/sqli_payloads.txt"
   xss_payloads: "wordlists/xss_payloads.txt"
+  open_redirect_payloads: "wordlists/open_redirect_payloads.txt"
+  xxe_payloads: "wordlists/xxe_payloads.txt"
+  ssrf_payloads: "wordlists/ssrf_payloads.txt"
+  crlf_payloads: "wordlists/crlf_payloads.txt"
 
 crawler:
   depth: 2
@@ -24,3 +28,10 @@ dirb_scanner:
   threads: 10
   timeout: 5
   max_depth: 5
+
+brute_force:
+  concurrency: 100
+
+cookies:
+  name: ""
+  value: "" 

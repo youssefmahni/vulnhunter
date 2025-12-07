@@ -1,0 +1,8 @@
+http://127.0.0.1
+http://localhost
+http://127.0.0.1:80
+http://127.0.0.1:22
+http://0.0.0.0
+http://[::1]
+file:///etc/passwd
+file:///c:/windows/win.ini

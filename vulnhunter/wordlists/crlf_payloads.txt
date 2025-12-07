@@ -1,0 +1,5 @@
+%0d%0aSet-Cookie: vulnhunter=true
+%0aSet-Cookie: vulnhunter=true
+%0dSet-Cookie: vulnhunter=true
+%23%0d%0aSet-Cookie: vulnhunter=true
+%250d%250aSet-Cookie: vulnhunter=true

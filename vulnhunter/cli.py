@@ -12,8 +12,8 @@ from core.logger import logger
 from modules.recon.basic_info import BasicInfoScanner
 from modules.recon.waf_detect import WAFDetectScanner
 from modules.recon.headers_check import HeadersCheckScanner
-from modules.recon.ssl_check import SSLCheckScanner
-from modules.recon.cors_check import CORSCheckScanner
+from modules.vuln.ssl_check import SSLCheckScanner
+from modules.vuln.cors_check import CORSCheckScanner
 from modules.recon.whois_info import WhoisScanner
 from modules.recon.dns_scanner import DNSScanner
 from modules.recon.dirb_scanner import DirbScanner
@@ -23,6 +23,10 @@ from modules.recon.CloudStorage import CloudStorage
 from modules.vuln.sqli import SQLIScanner
 from modules.vuln.nosqli import NoSQLIScanner
 from modules.vuln.brute_force import BruteForceScanner
+from modules.vuln.open_redirect import OpenRedirectScanner
+from modules.vuln.xxe import XXEScanner
+from modules.vuln.ssrf import SSRFScanner
+from modules.vuln.crlf import CRLFScanner
 from modules.vuln.ssti import SSTIScanner
 from modules.vuln.lfi import LFIScanner
 from modules.vuln.rfi import RFIScanner
@@ -56,7 +60,6 @@ def main(target_url):
     # Recon phase
     logger.warning("Running Reconnaissance Phase...")
     recon_scanners = [
-
         BasicInfoScanner(target_url, requester.session, config),
         WAFDetectScanner(target_url, requester.session, config),
         HeadersCheckScanner(target_url, requester.session, config),
@@ -65,9 +68,7 @@ def main(target_url):
         DirbScanner(target_url, requester.session, config),
         WhoisScanner(target_url,requester.session,config),
         DNSScanner(target_url,requester.session,config),
-        CloudStorage(target_url,requester.session,config)
-        
-        
+        CloudStorage(target_url,requester.session,config) 
     ]
     
     max_threads = config.get('target.threads', 5)
@@ -92,7 +93,7 @@ def main(target_url):
             all_vulns = []
             for scanner in recon_scanners:
                 all_vulns.extend(scanner.vulnerabilities)
-            reporter = Reporter(all_vulns)
+            reporter = Reporter(all_vulns, target_url)
             reporter.generate_json()
             reporter.generate_html()
             logger.success("Recon report saved.")
@@ -109,12 +110,18 @@ def main(target_url):
     # Vuln phase
     logger.warning("Running Vulnerability Testing Phase...")
     vuln_scanners = [
-       #SQLIScanner(target_url, requester.session, config),
-        NoSQLIScanner(target_url, requester.session, config),
-       #BruteForceScanner(target_url, requester.session, config),
-        SSTIScanner(target_url, requester.session, config),
-        LFIScanner(target_url, requester.session, config),
-        RFIScanner(target_url, requester.session, config)
+       SQLIScanner(target_url, requester.session, config),
+       BruteForceScanner(target_url, requester.session, config),
+       OpenRedirectScanner(target_url, requester.session, config),
+       XXEScanner(target_url, requester.session, config),
+       SSRFScanner(target_url, requester.session, config),
+       CRLFScanner(target_url, requester.session, config),
+       SQLIScanner(target_url, requester.session, config),
+       NoSQLIScanner(target_url, requester.session, config),
+       BruteForceScanner(target_url, requester.session, config),
+       SSTIScanner(target_url, requester.session, config),
+       LFIScanner(target_url, requester.session, config),
+       RFIScanner(target_url, requester.session, config)
     ]
     
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_threads) as executor:
@@ -141,7 +148,7 @@ def main(target_url):
         logger.success("No issues found.")
 
     # Generate reports
-    reporter = Reporter(all_vulns)
+    reporter = Reporter(all_vulns, target_url)
     reporter.generate_json()
     reporter.generate_html()
 

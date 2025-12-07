@@ -1,0 +1,9 @@
+http://google.com
+https://google.com
+//google.com
+//www.google.com
+/\google.com
+\/google.com
+http://testphp.vulnweb.com
+/
+/login.php
