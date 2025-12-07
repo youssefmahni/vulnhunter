@@ -70,7 +70,7 @@ class Crawler:
             local_forms.append({
                 'action': urljoin(url, form.get('action', '')),
                 'method': form.get('method', 'get').upper(),
-                'inputs': [{'name': inp.get('name'), 'type': inp.get('type')} for inp in form.find_all('input')]
+                'inputs': [{'name': inp.get('name'), 'type': inp.get('type'), 'value': inp.get('value')} for inp in form.find_all('input')]
             })
         
         with self.lock:
@@ -100,6 +100,9 @@ class Crawler:
             next_url = next_url.split('#')[0]
             
             if self._is_same_domain(next_url):
+                 # Skip logout links to prevent session invalidation
+                 if 'logout' in next_url.lower():
+                     continue
                  new_links.append(next_url)
                  
         return new_links

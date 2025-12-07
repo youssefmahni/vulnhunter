@@ -23,21 +23,17 @@ class DirbScanner(BaseScanner):
         self.wildcard_responses = []
         
         # Generate a few random non-existent paths
+        # Generate a few random non-existent paths
         for _ in range(3):
             random_path = ''.join(random.choices(string.ascii_lowercase + string.digits, k=12))
-            url = f"{self.target_url}/{random_path}"
-            try:
-                resp = self.session.get(url, timeout=self.config.get('dirb_scanner.timeout', 5), allow_redirects=False)
-                # Store interesting properties of the wildcard response
-                # We store status code and content length. 
-                # Ideally we might want fuzzy hashing but length + code is a good start.
-                self.wildcard_responses.append({
-                    'status': resp.status_code,
-                    'length': len(resp.content),
-                    'url': url
-                })
-            except Exception:
-                pass
+            
+            # Test as file
+            url_file = f"{self.target_url}/{random_path}"
+            self._probe_wildcard(url_file)
+            
+            # Test as directory
+            url_dir = f"{self.target_url}/{random_path}/"
+            self._probe_wildcard(url_dir)
         
         if not self.wildcard_responses:
              self.logger.info("Calibration failed (network error?), assuming no wildcards.")
@@ -49,35 +45,64 @@ class DirbScanner(BaseScanner):
         if non_404s:
             self.logger.warning(f"Detected wildcard/soft 404 behavior. {len(non_404s)}/{len(self.wildcard_responses)} checks returned non-404.")
             for r in non_404s:
-                self.logger.raw(f"    - Status: {r['status']}, Length: {r['length']}")
+                self.logger.raw(f"    - Status: {r['status']}, Length: {r['length']}, URL: {r['url']}")
             self.logger.info("Will filter results matching these signatures.")
         else:
             self.logger.info("No wildcard behavior detected (standard 404s).")
 
-    def is_wildcard(self, status_code, content_length):
+    def _probe_wildcard(self, url):
+        try:
+            resp = self.session.get(url, timeout=self.config.get('dirb_scanner.timeout', 5), allow_redirects=False)
+            self.wildcard_responses.append({
+                'status': resp.status_code,
+                'length': len(resp.content),
+                'location': resp.headers.get('Location'),
+                'url': url
+            })
+        except Exception:
+            pass
+
+    def is_wildcard(self, status_code, content_length, location=None):
         """
         Checks if a response matches known wildcard signatures.
         """
         for w in self.wildcard_responses:
             # If the wildcard response was a 404, we don't filter based on it 
-            # (unless the server returns 404 for valid files too, which is rare/weird).
             if w['status'] == 404:
                 continue
             
             # Strict status match
             if status_code == w['status']:
-                # Loose length match (allow small variance, e.g. dynamic timestamps)
-                # For now, let's say within 5% or 5 bytes difference (whichever is larger, but be careful with small files)
+                # Check Location header for redirects
+                if status_code in [301, 302, 307, 308]:
+                    if w.get('location') != location:
+                        continue
+
+                # Loose length match (allow small variance)
                 diff = abs(content_length - w['length'])
                 
-                # If the file is very small (< 100 bytes), be strict (max 5 bytes diff)
                 if w['length'] < 100:
                     if diff <= 5:
                         return True
-                # For larger files, allow 5% variance
                 elif diff / w['length'] < 0.05:
                     return True
         return False
+
+    def _verify_directory(self, dir_url):
+        """
+        Verifies if a found directory is real by checking a random non-existent path inside it.
+        If the random path returns a 'found' status, the directory is likely a soft-404 trap or a file.
+        """
+        random_path = ''.join(random.choices(string.ascii_lowercase + string.digits, k=12))
+        probe_url = f"{dir_url}{random_path}"
+        try:
+            resp = self.session.get(probe_url, timeout=self.config.get('dirb_scanner.timeout', 5), allow_redirects=False)
+            # If the random path is ALSO found (not 404, not wildcard), then it's a trap.
+            if resp.status_code not in [404, 301, 307, 308, 429] and not self.is_wildcard(resp.status_code, len(resp.content), resp.headers.get('Location')):
+                return False
+            return True
+        except Exception:
+            return True
 
     def scan(self, forms=None, urls=None):
         self.logger.info(f"Running DIRB-style directory brute-force on {self.target_url}")
@@ -104,17 +129,21 @@ class DirbScanner(BaseScanner):
 
     def scan_base(self, base_url, words, depth, max_depth):
         found_dirs = []
+        
+        # Ensure base_url doesn't have trailing slash for consistent joining
+        base_url = base_url.rstrip('/')
 
         def check_word(word):
             local_downloaded = 0
             local_found = 0
             file_reported = False
+            
             # Try as file
             file_url = f"{base_url}/{word}"
             try:
                 resp = self.session.get(file_url, timeout=self.config.get('dirb_scanner.timeout', 5), allow_redirects=False)
                 local_downloaded += 1
-                if resp.status_code not in [404, 403, 301, 307, 308, 429] and not self.is_wildcard(resp.status_code, len(resp.content)):
+                if resp.status_code not in [404, 403, 301, 307, 308, 429] and not self.is_wildcard(resp.status_code, len(resp.content), resp.headers.get('Location')):
                     self.logger.raw(f"+ {file_url} (CODE:{resp.status_code}|SIZE:{len(resp.content)})")
                     self.add_vulnerability(
                         "File Found",
@@ -126,21 +155,24 @@ class DirbScanner(BaseScanner):
             except Exception as e:
                 pass
 
-            # Try as directory (skip if word has file extension or file was reported)
-            if '.' not in word and not file_reported:
+            # Try as directory
+            # We check directories even if file was found, as they might be distinct (e.g. API endpoints)
+            if True:
                 dir_url = f"{base_url}/{word}/"
                 try:
                     resp = self.session.get(dir_url, timeout=self.config.get('dirb_scanner.timeout', 5), allow_redirects=False)
                     local_downloaded += 1
-                    if resp.status_code not in [404, 403, 301, 307, 308, 429] and not self.is_wildcard(resp.status_code, len(resp.content)):
-                        self.logger.raw(f"==> DIRECTORY: {dir_url}")
-                        self.add_vulnerability(
-                            "Directory Found",
-                            f"{dir_url} (CODE:{resp.status_code}|SIZE:{len(resp.content)})",
-                            "Info"
-                        )
-                        local_found += 1
-                        found_dirs.append(dir_url)
+                    if resp.status_code not in [404, 301, 307, 308, 429] and not self.is_wildcard(resp.status_code, len(resp.content), resp.headers.get('Location')):
+                        # Verify it's a real directory and not a trap
+                        if self._verify_directory(dir_url):
+                            self.logger.raw(f"==> DIRECTORY: {dir_url}")
+                            self.add_vulnerability(
+                                "Directory Found",
+                                f"{dir_url} (CODE:{resp.status_code}|SIZE:{len(resp.content)})",
+                                "Info"
+                            )
+                            local_found += 1
+                            found_dirs.append(dir_url)
                 except Exception as e:
                     pass
             return local_downloaded, local_found

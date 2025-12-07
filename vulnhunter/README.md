@@ -21,10 +21,19 @@ These modules gather critical information about the target before any aggressive
 If no WAF is detected (or if the user explicitly approves), VulnHunter proceeds with active vulnerability testing:
 - **SQL Injection**: Tests input fields and URLs for SQL injection vulnerabilities.
 - **Brute Force**: Attempts to brute-force login forms using configurable wordlists.
+- **XSS**: Cross-Site Scripting detection (Reflected/Stored).
+- **Open Redirect**: Checks for open redirection vulnerabilities.
+- **XXE**: XML External Entity injection testing.
+- **SSRF**: Server-Side Request Forgery detection.
+- **CRLF Injection**: Checks for HTTP Response Splitting.
+- **NoSQL Injection**: Tests for NoSQL injection vulnerabilities.
+- **SSTI**: Server-Side Template Injection detection.
+- **LFI/RFI**: Local and Remote File Inclusion testing.
 
 ### 📊 Reporting
 - **JSON Reports**: Detailed machine-readable output.
-- **HTML Reports**: User-friendly HTML reports with severity levels and summaries.
+- **JSON Reports**: Detailed machine-readable output.
+- **HTML Reports**: User-friendly HTML reports with severity levels, summaries, and a dedicated section for discovered files and directories.
 
 ## Project Structure
 
@@ -79,6 +88,8 @@ VulnHunter is highly configurable via `config.yaml`. Key settings include:
 - **Dirb Scanner**:
   - `threads`: Specific thread count for directory busting.
   - `max_depth`: Recursion depth for directory discovery.
+- **Cookies**:
+  - Define custom cookies (e.g., session IDs) to be used during scanning and crawling for authenticated testing.
 
 ## Usage
 

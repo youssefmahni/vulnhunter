@@ -1,4 +1,6 @@
 admin
+vulnerabilities
+exec
 create.sql
 login
 images
