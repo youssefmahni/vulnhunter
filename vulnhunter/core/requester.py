@@ -1,6 +1,7 @@
 import requests
 from urllib.parse import urljoin
 import urllib3
+from core.logger import logger
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -16,7 +17,8 @@ class Requester:
             kwargs.setdefault('timeout', self.timeout)
             response = self.session.get(url, **kwargs)
             return response
-        except requests.RequestException:
+        except requests.RequestException as e:
+            logger.error(f"Request failed: {e}")
             return None
 
     def post(self, url, data=None, **kwargs):

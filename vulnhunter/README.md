@@ -29,6 +29,7 @@ If no WAF is detected (or if the user explicitly approves), VulnHunter proceeds 
 - **NoSQL Injection**: Tests for NoSQL injection vulnerabilities.
 - **SSTI**: Server-Side Template Injection detection.
 - **LFI/RFI**: Local and Remote File Inclusion testing.
+- **CSRF**: Cross-Site Request Forgery detection.
 
 ### 📊 Reporting
 - **JSON Reports**: Detailed machine-readable output.
