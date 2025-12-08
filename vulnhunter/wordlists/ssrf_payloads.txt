@@ -6,3 +6,4 @@ http://0.0.0.0
 http://[::1]
 file:///etc/passwd
 file:///c:/windows/win.ini
+http://127.0.0.1:1337

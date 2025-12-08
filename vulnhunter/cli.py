@@ -29,6 +29,7 @@ from modules.vuln.ssrf import SSRFScanner
 from modules.vuln.crlf import CRLFScanner
 from modules.vuln.ssti import SSTIScanner
 from modules.vuln.lfi import LFIScanner
+from modules.vuln.csrf import CSRFScanner
 
 
 @click.command()
@@ -70,12 +71,12 @@ def main(target_url):
     # Recon phase
     logger.warning("Running Reconnaissance Phase...")
     recon_scanners = [
-        # BasicInfoScanner(target_url, requester.session, config),
+        # BasicInfoScanner(target_url, request`er.session, config),
         # WAFDetectScanner(target_url, requester.session, config),
         # DirbScanner(target_url, requester.session, config),
         # WhoisScanner(target_url,requester.session,config),
         # DNSScanner(target_url,requester.session,config),
-        # CloudStorage(target_url,requester.session,config) 
+        # CloudStorage(target_url,requester.session,config)`
     ]
     
     max_threads = config.get('target.threads', 5)
@@ -121,14 +122,15 @@ def main(target_url):
         # SSLCheckScanner(target_url, requester.session, config),
         # CORSCheckScanner(target_url, requester.session, config),
         # SQLIScanner(target_url, requester.session, config),
-        #BruteForceScanner(target_url, requester.session, config),
+        # BruteForceScanner(target_url, requester.session, config),
         # OpenRedirectScanner(target_url, requester.session, config),
         # XXEScanner(target_url, requester.session, config),
         # SSRFScanner(target_url, requester.session, config),
         # CRLFScanner(target_url, requester.session, config),
         # NoSQLIScanner(target_url, requester.session, config),
         # SSTIScanner(target_url, requester.session, config),
-        #LFIScanner(target_url, requester.session, config)
+        # LFIScanner(target_url, requester.session, config),
+        # CSRFScanner(target_url, requester.session, config)
     ]
     
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_threads) as executor:
