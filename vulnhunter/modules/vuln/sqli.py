@@ -20,8 +20,10 @@ class SQLIScanner(BaseScanner):
         # 1. FORM SQLi TESTING
         # -------------------------
         if forms:
+            
             for form in forms:
                 result = self.scan_form_for_sqli(form, payloads)
+                break
                 if result:
                     field, payload, action = result
                     vuln_id = f"{action}|{field}"
@@ -77,10 +79,11 @@ class SQLIScanner(BaseScanner):
     def detect_sqli(self, response):
         errors = [
             "sql syntax", "mysql_fetch", "mysql_num",
-            "odbc", "ora-", "syntax error",
-            "unclosed quotation mark", "sqlite"
+            "odbc", "ora-", "syntax error",'check the manual that corresponds to your MySQL server version for the right syntax'
+            "unclosed quotation mark", "sqlite",
         ]
         body = response.text.lower()
+        
         return any(err in body for err in errors)
 
     # ---------------------------------------------------------
@@ -89,24 +92,62 @@ class SQLIScanner(BaseScanner):
     def scan_form_for_sqli(self, form, payloads):
 
         action = form.get("action")
+        method = form.get("method", "get").lower()   # <-- default to GET
         inputs = form.get("inputs", [])
+        print("inputs :", inputs)
 
-        base_data = {inp["name"]: "test" for inp in inputs if inp.get("name")}
+    # Build base form data
+        base_data = {inp["name"]: "test" for inp in inputs 
+                    if inp["type"].lower() != "submit"}
+        print("base_data :", base_data)
 
         for inp in inputs:
-            field = inp.get("name")
+            field = inp["name"]
             if not field:
                 continue
 
             for payload in payloads:
-
                 test_data = base_data.copy()
                 test_data[field] = payload
 
-                response = self.session.post(action, data=test_data)
+                print("test_data :", test_data)
 
+                # -------------------------------
+                # SEND REQUEST BASED ON METHOD
+                # -------------------------------
+                if method == "post":
+                    response = self.session.post(
+                        action,
+                        data=test_data,
+                        cookies={
+                            "PHPSESSID": "5b2e7747f78d90e5ee50a6ca4df7ad1d",
+                            "security": "low",
+                        },
+                        headers={
+                            "User-Agent": "Mozilla/5.0"
+                        }
+                    )
+
+                else:  # GET form
+                    response = self.session.get(
+                        action,
+                        params=test_data,
+                        cookies={
+                            "PHPSESSID": "5b2e7747f78d90e5ee50a6ca4df7ad1d",
+                            "security": "low",
+                        },
+                        headers={
+                            "User-Agent": "Mozilla/5.0"
+                        }
+                    )
+
+                # -------------------------------
+                # CHECK SQLi
+                # -------------------------------
                 if self.detect_sqli(response):
                     return (field, payload, action)
+
+                break  # currently only testing 1 payload per field
 
         return None
 

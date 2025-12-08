@@ -92,16 +92,6 @@ class XSSScanner(BaseScanner):
     def detect_xss(self, response, payload):
         body = response.text.lower()
 
-        clean_payload = payload.lower()
-
-        # literal reflection
-        if clean_payload in body:
-            return True
-
-        # HTML-escaped reflection
-        if html.escape(payload).lower() in body:
-            return True
-
         # URL-encoded reflection
         encoded = urlencode({"x": payload})[2:].lower()
         if encoded in body:

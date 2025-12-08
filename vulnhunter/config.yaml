@@ -33,5 +33,5 @@ brute_force:
   concurrency: 10
 
 cookies:
-  - "PHPSESSID=rlf0hcm35mm0k12i8of6m20nmi"
+  - "PHPSESSID=5b2e7747f78d90e5ee50a6ca4df7ad1d"
   - "security=low"
