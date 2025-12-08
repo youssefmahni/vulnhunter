@@ -3,29 +3,34 @@ from modules.base import BaseScanner
 from urllib.parse import urlparse, parse_qs, urlunparse, urlencode
 
 class NoSQLIScanner(BaseScanner):
-    """
-    Scanner to detect NoSQL Injection (NoSQLi) vulnerabilities.
-    It first attempts to fingerprint a MongoDB database using error-based probing.
-    """
     
-    COMMON_NOSQLI_PARAMS = ["username", "user", "email", "id", "password"]
+    COMMON_NOSQLI_PARAMS = ["username", "user", "email", "id", "password", "search"]
     
-    # Common NoSQL payloads for testing (MongoDB style)
+    # Payload for the initial fingerprinting check (designed to cause an error)
+    FINGERPRINT_PAYLOAD = '{"$badop": 1}'
+    FINGERPRINT_PARAM = 'username' 
+    
+    # Payloads for the full vulnerability scan
     NOSQLI_PAYLOADS = [
-        ("Auth Bypass ($ne)", '{"$ne": null}', "This is typically used in password/ID fields"),
-        ("Auth Bypass ($gt)", '{"$gt": ""}', "This is typically used in password/ID fields"),
+        ("Error Breakout 1", '", $ne: 1 }', "Breaks string escaping and injects MongoDB operator."),
+        ("Error Breakout 2", '{ "$error_test": 1 }', "Injects an invalid operator to force a known error."),
+        ("Error Breakout 3 (Incomplete JSON)", '{ $ne: 1 ', "Injects incomplete JSON/BSON syntax to force a parsing error."),
+        ("Error Breakout 4 (Regex Structure)", '{ "$regex": "\\", "options": "i" }', "Attempts to break string context by starting a regex structure."),
+        ("Error Breakout 5 (Array Context)", '[ { "$bad_op": 1 } ]', "Tests if the input is processed in an array context, forcing a bad operator error."),
+    
     ]
     
-    # Signatures for MongoDB error messages used for fingerprinting
-    # These often appear in the response when an invalid query syntax is injected.
-    MONGODB_ERROR_SIGNATURES = [
+    # Signatures commonly found in leaked MongoDB error messages (used for both phases)
+    ERROR_SIGNATURES = [
         "bson",
         "nested",
         "bad key",
         "invalid argument",
         "improper op",
-        "error near" # Generic indicator of unexpected syntax processing
+        "error near",
+        "invalid operator"
     ]
+
 
     VULN_TYPE = "NoSQL Injection (Auth Bypass)"
     VULN_SEVERITY = "High"
@@ -33,34 +38,33 @@ class NoSQLIScanner(BaseScanner):
     AUTH_SUCCESS_STATUS = [302, 301] 
     
     # State variable to store the detection result across methods
-    NOSQL_DETECTED = False
+
 
     def _check_for_nosql_db(self):
         """
-        Attempts to detect a NoSQL database (specifically MongoDB) 
-        by injecting a simple syntax error and checking the response.
+        Phase 1: Attempts to detect a NoSQL database by injecting a syntax error 
+        and checking for leaked database error signatures.
         """
-        self.logger.info("Attempting to detect NoSQL database...")
+        self.logger.info("Phase 1: Attempting to detect NoSQL database...")
         
-        # Test Payload: Inject a simple, unexpected operator (or syntax) into a common parameter.
-        # We test the main URL with a common parameter and a MongoDB-like injection.
-        test_param = self.COMMON_NOSQLI_PARAMS[0] # 'username'
-        test_payload = '{"$badop": 1}' # An invalid MongoDB operator
-        
-        test_url = self.target_url + ('?' if '?' not in self.target_url else '&') + f"{test_param}={test_payload}"
+        # Build a single test request on the target URL
+        test_url = self.target_url + ('?' if '?' not in self.target_url else '&') + \
+                   f"{self.FINGERPRINT_PARAM}={self.FINGERPRINT_PAYLOAD}"
         
         try:
             response = self.session.get(test_url)
             
-            if response and response.status_code == 200:
+            # Check response status codes that might leak errors (200, 500, 400)
+            if response and response.status_code in [200, 500, 400]:
                 response_text = response.text.lower()
                 
-                for signature in self.MONGODB_ERROR_SIGNATURES:
+                # Check for any of the known error signatures
+                for signature in self.ERROR_SIGNATURES:
                     if signature in response_text:
                         self.NOSQL_DETECTED = True
                         self.add_vulnerability(
                             "Database Fingerprinting",
-                            f"Likely MongoDB backend detected (Error signature: '{signature}' found in response)",
+                            f"Likely NoSQL/MongoDB backend detected (Error signature: '{signature}' found).",
                             "Info"
                         )
                         return True
@@ -73,14 +77,14 @@ class NoSQLIScanner(BaseScanner):
     def scan(self, forms=None, urls=None):
         self.logger.info(f"Starting NoSQL Injection (NoSQLi) scan on {self.target_url}")
         
-        # 1. Database Fingerprinting Check
+        # 1. DATABASE FINGERPRINTING CHECK
         if not self._check_for_nosql_db():
-            print(f"{Fore.BLUE}[*] No obvious NoSQL database detected. Skipping full NoSQLi scan.{Style.RESET_ALL}")
+            print(f"{Fore.BLUE}[*] No obvious NoSQL database detected. Stopping NoSQLi scan.{Style.RESET_ALL}")
             return
             
-        print(f"{Fore.YELLOW}[*] NoSQL database detected. Starting full NoSQL Injection scan.{Style.RESET_ALL}")
+        print(f"{Fore.YELLOW}[*] NoSQL database detected. Starting full error-based injection scan...{Style.RESET_ALL}")
         
-        # 2. Proceed with the full vulnerability scan only if NoSQL is detected
+        # 2. FULL VULNERABILITY SCAN (Only runs if detected)
         if urls:
             for url in urls:
                 self._test_url_parameters(url)
@@ -89,13 +93,13 @@ class NoSQLIScanner(BaseScanner):
             for form in forms:
                 self._test_form_inputs(form)
 
-    # --- Testing methods remain the same ---
-
     def _test_url_parameters(self, url):
-        """Tests existing and common GET parameters with NoSQL payloads."""
+        """Tests existing and common GET parameters with NoSQL error payloads."""
         
         parsed_url = urlparse(url)
         query_params = parse_qs(parsed_url.query)
+        
+        # Optimization: Only test existing query parameters and common ones
         params_to_test = set(query_params.keys()).union(self.COMMON_NOSQLI_PARAMS)
         
         for key in params_to_test:
@@ -117,15 +121,12 @@ class NoSQLIScanner(BaseScanner):
         
         for input_field in form.get('inputs', []):
             input_name = input_field.get('name')
-            # Only test common login/data fields
             if not input_name or input_name not in self.COMMON_NOSQLI_PARAMS:
                 continue
 
             for name, payload, desc in self.NOSQLI_PAYLOADS:
-                # Use a known username like 'admin' when injecting into the password field
                 data = {i.get('name'): 'admin' if i.get('name') == 'username' else i.get('name') for i in form.get('inputs', []) if i.get('name')}
                 
-                # Inject the NoSQLi payload into the target field 
                 data[input_name] = payload
                 
                 response = None
@@ -139,16 +140,28 @@ class NoSQLIScanner(BaseScanner):
                     self._check_response(response, name, desc, location)
 
     def _check_response(self, response, payload_name, payload_description, location_detail):
-        """Checks for the successful authentication signature/status."""
+        """
+        Confirms vulnerability by checking for leaked database error signatures 
+        (error-based confirmation).
+        """
         
         is_vulnerable = False
-        if response and (self.AUTH_SUCCESS_SIG in response.text or response.status_code in self.AUTH_SUCCESS_STATUS):
-            is_vulnerable = True
+        
+        # Check responses with status codes that might leak errors (200, 500, 400)
+        if response and response.status_code in [200, 500, 400]:
+            response_text = response.text.lower()
+            
+            
+            for signature in self.ERROR_SIGNATURES:
+                if signature in response_text:
+                    is_vulnerable = True
+                    # Break is correctly used here for efficiency
+                    break 
 
         if is_vulnerable:
             details = (
-                f"NoSQL Injection (Auth Bypass) detected! Payload '{payload_name}' resulted in an unexpected success state "
-                f"(Status: {response.status_code}). Payload description: {payload_description}. Location: {location_detail}"
+                f"NoSQL Injection (Error Leakage) detected! Payload '{payload_name}' triggered a database error message "
+                f"(Status: {response.status_code}). This confirms the input is processed as a database query. Location: {location_detail}"
             )
 
             self.add_vulnerability(
@@ -156,4 +169,4 @@ class NoSQLIScanner(BaseScanner):
                 details,
                 self.VULN_SEVERITY
             )
-            print(f"{Fore.RED}[!] NoSQLI VULNERABILITY FOUND: {payload_name} - {location_detail}{Style.RESET_ALL}")
+            print(f"{Fore.RED}[!] NoSQLI VULNERABILITY FOUND (Error-Based): {payload_name} - {location_detail}{Style.RESET_ALL}")
