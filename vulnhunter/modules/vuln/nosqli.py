@@ -31,9 +31,14 @@ class NoSQLIScanner(BaseScanner):
         "invalid operator"
     ]
 
-    VULN_TYPE = "NoSQL Injection (Error Leakage)"
-    VULN_SEVERITY = "high"
-    NOSQL_DETECTED = False
+
+    VULN_TYPE = "NoSQL Injection (Auth Bypass)"
+    VULN_SEVERITY = "High"
+    AUTH_SUCCESS_SIG = "Welcome, admin" 
+    AUTH_SUCCESS_STATUS = [302, 301] 
+    
+    # State variable to store the detection result across methods
+
 
     def _check_for_nosql_db(self):
         """

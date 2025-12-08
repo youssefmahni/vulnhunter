@@ -179,4 +179,5 @@ class SSTIScanner(BaseScanner):
                 f"SSTI detected (probable engine: {engine}). The payload was interpreted, returning '{self.EXPECTED_RESULT}'. Location: {location_detail}",
                 self.VULN_SEVERITY
             )
+            
             print(f"{Fore.RED}[!] SSTI VULNERABILITY FOUND: {engine} - {location_detail}{Style.RESET_ALL}")

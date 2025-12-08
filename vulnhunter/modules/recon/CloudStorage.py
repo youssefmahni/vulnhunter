@@ -14,12 +14,16 @@ class CloudStorage(BaseScanner):
         'GCP_STORAGE': r'storage\.googleapis\.com'
     }
 
-    
+    # AWS Metadata Endpoint (internal IP for SSRF testing)
+    AWS_METADATA_URL = 'http://169.254.169.254/latest/meta-data/iam/security-credentials/'
     
     def scan(self, forms=None, urls=None):
-        self.logger.info(f"Starting Cloud Storage misconfiguration check on {self.target_url}")
-
-        # --- External Bucket Misconfiguration Check ---
+        self.logger.info(f"Starting Cloud Storage and SSRF check on {self.target_url}")
+        
+        # --- 1. SSRF Check (Internal Misconfiguration) ---
+        self._test_ssrf_metadata_exposure()
+        
+        # --- 2. External Bucket Misconfiguration Check ---
         
         urls_to_test = list(urls or [])
         # Add the main target in case it is a cloud bucket URL itself
@@ -110,4 +114,30 @@ class CloudStorage(BaseScanner):
             # Handle connection errors or other issues
             self.logger.error(f"Write Check: Error during PUT request (likely network or missing method): {e}")
             
-  
+    def _test_ssrf_metadata_exposure(self):
+        """Tests for Server-Side Request Forgery (SSRF) by attempting to access the internal AWS metadata endpoint."""
+        
+        self.logger.info(f"Checking for Scanner-side access to AWS Metadata Endpoint: {self.AWS_METADATA_URL}")
+        self.logger.info("Note: This test reveals if the scanner's host (or a vulnerable application) can access internal cloud resources.")
+        
+        try:
+            # This is a low-latency, non-internet request, so a short timeout is fine
+            response = self.session.get(self.AWS_METADATA_URL, timeout=3, allow_redirects=False)
+            
+            if response and response.status_code == 200:
+                content = response.text
+                
+                # Check for characteristic signs of metadata response
+                if 'security-credentials/' in content.lower():
+                    self.add_vulnerability(
+                        "Server-Side Request Forgery (SSRF) - Metadata Exposure",
+                        f"The scanner successfully accessed the AWS metadata endpoint ({self.AWS_METADATA_URL}), which is a sign of an SSRF vulnerability if this was triggered through a web application parameter. **Check for leaked IAM credentials** in the response content.",
+                        "Critical"
+                    )
+                else:
+                    self.logger.info("SSRF Check: Endpoint reachable, but response was not the expected metadata.")
+            else:
+                self.logger.info("SSRF Check: Metadata endpoint is unreachable or denied (Expected on non-AWS hosts).")
+
+        except Exception as e:
+            self.logger.info(f"SSRF Check: Request failed (Expected if not running on AWS/VPC). Error: {e}")

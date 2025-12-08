@@ -18,9 +18,13 @@ from modules.recon.whois_info import WhoisScanner
 from modules.recon.dns_scanner import DNSScanner
 from modules.recon.dirb_scanner import DirbScanner
 from modules.recon.CloudStorage import CloudStorage
+from modules.recon.techstack import TechStackScanner
 
 # Vuln modules
 from modules.vuln.sqli import SQLIScanner
+from modules.vuln.xss import XSSScanner
+from modules.vuln.cmdi import CMDiScanner
+
 from modules.vuln.nosqli import NoSQLIScanner
 from modules.vuln.brute_force import BruteForceScanner
 from modules.vuln.open_redirect import OpenRedirectScanner
@@ -69,7 +73,23 @@ def main(target_url):
     # Recon phase
     logger.warning("Running Reconnaissance Phase...")
     recon_scanners = [
+<<<<<<< HEAD
+
+        # BasicInfoScanner(target_url, requester.session, config),
+        # WAFDetectScanner(target_url, requester.session, config),
+        # HeadersCheckScanner(target_url, requester.session, config),
+        # SSLCheckScanner(target_url, requester.session, config),
+        # CORSCheckScanner(target_url, requester.session, config),
+        # DirbScanner(target_url, requester.session, config),
+        # WhoisScanner(target_url,requester.session,config),
+        # DNSScanner(target_url,requester.session,config),
+        #CloudStorage(target_url,requester.session,config)
+        
+        
+        # BasicInfoScanner(target_url, requester.session, config),
+=======
         # BasicInfoScanner(target_url, request`er.session, config),
+>>>>>>> 56d8658fe8cbc8e2aee7a2f6e1712ea2350a2da4
         # WAFDetectScanner(target_url, requester.session, config),
         # DirbScanner(target_url, requester.session, config),
         # WhoisScanner(target_url,requester.session,config),
@@ -116,11 +136,21 @@ def main(target_url):
     # Vuln phase
     logger.warning("Running Vulnerability Testing Phase...")
     vuln_scanners = [
+        SQLIScanner(target_url, requester.session, config),
+        #XSSScanner(target_url, requester.session, config),
+        #NoSQLIScanner(target_url, requester.session, config),
+        #SSTIScanner(target_url, requester.session, config),
+        #LFIScanner(target_url, requester.session, config),
+        #RFIScanner(target_url, requester.session, config)
         # HeadersCheckScanner(target_url, requester.session, config),
         # SSLCheckScanner(target_url, requester.session, config),
         # CORSCheckScanner(target_url, requester.session, config),
         # SQLIScanner(target_url, requester.session, config),
+<<<<<<< HEAD
+        #BruteForceScanner(target_url, requester.session, config),
+=======
         # BruteForceScanner(target_url, requester.session, config),
+>>>>>>> 56d8658fe8cbc8e2aee7a2f6e1712ea2350a2da4
         # OpenRedirectScanner(target_url, requester.session, config),
         # XXEScanner(target_url, requester.session, config),
         # SSRFScanner(target_url, requester.session, config),
