@@ -1,54 +1,54 @@
-import json
-import os
-from datetime import datetime
-import urllib.parse
+import json 
+import os 
+from datetime import datetime 
+import urllib .parse 
 
-class Reporter:
-    def __init__(self, vulnerabilities, target_url):
-        self.vulnerabilities = vulnerabilities
-        self.target_url = target_url
-        self.timestamp = datetime.now().isoformat()
-        self.date_str = datetime.now().strftime("%Y-%m-%d")
+class Reporter :
+    def __init__ (self ,vulnerabilities ,target_url ):
+        self .vulnerabilities =vulnerabilities 
+        self .target_url =target_url 
+        self .timestamp =datetime .now ().isoformat ()
+        self .date_str =datetime .now ().strftime ("%Y-%m-%d")
 
-    def _get_filename(self, extension):
-        parsed = urllib.parse.urlparse(self.target_url)
-        domain = parsed.netloc or parsed.path
-        # Clean domain filename safe
-        domain = domain.replace(':', '_')
-        return f"{domain}_{self.date_str}.{extension}"
+    def _get_filename (self ,extension ):
+        parsed =urllib .parse .urlparse (self .target_url )
+        domain =parsed .netloc or parsed .path 
 
-    def generate_json(self, output_dir="reports"):
-        os.makedirs(output_dir, exist_ok=True)
-        report = {
-            "target": self.target_url,
-            "timestamp": self.timestamp,
-            "vulnerabilities": self.vulnerabilities
+        domain =domain .replace (':','_')
+        return f"{domain }_{self .date_str }.{extension }"
+
+    def generate_json (self ,output_dir ="reports"):
+        os .makedirs (output_dir ,exist_ok =True )
+        report ={
+        "target":self .target_url ,
+        "timestamp":self .timestamp ,
+        "vulnerabilities":self .vulnerabilities 
         }
-        filename = self._get_filename("json")
-        with open(f"{output_dir}/{filename}", 'w',encoding='utf-8') as f:
-            json.dump(report, f, indent=4)
+        filename =self ._get_filename ("json")
+        with open (f"{output_dir }/{filename }",'w',encoding ='utf-8')as f :
+            json .dump (report ,f ,indent =4 )
 
-    def generate_html(self, output_dir="reports"):
-        os.makedirs(output_dir, exist_ok=True)
-        
-        # Define severity order
-        severity_order = {"Critical": 0, "High": 1, "Medium": 2, "Low": 3, "Info": 4}
-        
-        # Separate Info from other vulnerabilities
-        vuln_items = [v for v in self.vulnerabilities if v['severity'] != 'Info']
-        info_items = [v for v in self.vulnerabilities if v['severity'] == 'Info']
-        
-        # Sort vulnerabilities by severity
-        vuln_items.sort(key=lambda x: severity_order.get(x['severity'], 5))
+    def generate_html (self ,output_dir ="reports"):
+        os .makedirs (output_dir ,exist_ok =True )
 
-        # Separate Discovered Paths from other Info
-        discovered_items = [v for v in info_items if v['type'] in ['File Found', 'Directory Found']]
-        general_info_items = [v for v in info_items if v['type'] not in ['File Found', 'Directory Found']]
-        
-        html = f"""
+
+        severity_order ={"Critical":0 ,"High":1 ,"Medium":2 ,"Low":3 ,"Info":4 }
+
+
+        vuln_items =[v for v in self .vulnerabilities if v ['severity']!='Info']
+        info_items =[v for v in self .vulnerabilities if v ['severity']=='Info']
+
+
+        vuln_items .sort (key =lambda x :severity_order .get (x ['severity'],5 ))
+
+
+        discovered_items =[v for v in info_items if v ['type']in ['File Found','Directory Found']]
+        general_info_items =[v for v in info_items if v ['type']not in ['File Found','Directory Found']]
+
+        html =f"""
         <html>
         <head>
-            <title>VulnHunter Report - {self.target_url}</title>
+            <title>VulnHunter Report - {self .target_url }</title>
             <style>
                 body {{ font-family: Arial, sans-serif; margin: 20px; font-size: 12px; }}
                 h1 {{ color: #2c3e50; text-align: center; }}
@@ -68,20 +68,20 @@ class Reporter:
         </head>
         <body>
         <h1>VulnHunter Security Report</h1>
-        <p style="text-align: center;">Target: {self.target_url}<br>Generated: {self.timestamp}</p>
+        <p style="text-align: center;">Target: {self .target_url }<br>Generated: {self .timestamp }</p>
         
         <div class="container">
             <div class="section">
                 <h2>Reconnaissance & Information</h2>
                 <table>
                 <tr><th>Type</th><th>Details</th></tr>
-                {"".join(f"<tr><td>{v['type']}</td><td>{v['details']}</td></tr>" for v in general_info_items) if general_info_items else "<tr><td colspan='2'>No general information items found.</td></tr>"}
+                {"".join (f"<tr><td>{v ['type']}</td><td>{v ['details']}</td></tr>"for v in general_info_items )if general_info_items else "<tr><td colspan='2'>No general information items found.</td></tr>"}
                 </table>
 
                 <h3>Discovered Paths</h3>
                 <table>
                 <tr><th>Type</th><th>Details</th></tr>
-                {"".join(f"<tr><td>{v['type']}</td><td>{v['details']}</td></tr>" for v in discovered_items) if discovered_items else "<tr><td colspan='2'>No files or directories found.</td></tr>"}
+                {"".join (f"<tr><td>{v ['type']}</td><td>{v ['details']}</td></tr>"for v in discovered_items )if discovered_items else "<tr><td colspan='2'>No files or directories found.</td></tr>"}
                 </table>
             </div>
             
@@ -89,7 +89,7 @@ class Reporter:
                 <h2>Vulnerabilities</h2>
                 <table>
                 <tr><th>Type</th><th>Severity</th><th>Details</th></tr>
-                {"".join(f"<tr><td>{v['type']}</td><td class='severity-{v['severity']}'>{v['severity']}</td><td>{v['details']}</td></tr>" for v in vuln_items) if vuln_items else "<tr><td colspan='3'>No vulnerabilities found.</td></tr>"}
+                {"".join (f"<tr><td>{v ['type']}</td><td class='severity-{v ['severity']}'>{v ['severity']}</td><td>{v ['details']}</td></tr>"for v in vuln_items )if vuln_items else "<tr><td colspan='3'>No vulnerabilities found.</td></tr>"}
                 </table>
             </div>
         </div>
@@ -97,6 +97,6 @@ class Reporter:
         </body>
         </html>
         """
-        filename = self._get_filename("html")
-        with open(f"{output_dir}/{filename}", 'w',encoding='utf-8') as f:
-            f.write(html)
+        filename =self ._get_filename ("html")
+        with open (f"{output_dir }/{filename }",'w',encoding ='utf-8')as f :
+            f .write (html )

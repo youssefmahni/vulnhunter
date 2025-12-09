@@ -1,7 +1,7 @@
-from core.logger import logger
+from core .logger import logger 
 
-def print_banner():
-    banner = """
+def print_banner ():
+    banner ="""
     ██╗   ██╗██╗   ██╗██╗     ███╗   ██╗██╗  ██╗██╗   ██╗███╗   ██╗████████╗███████╗██████╗
     ██║   ██║██║   ██║██║     ████╗  ██║██║  ██║██║   ██║████╗  ██║╚══██╔══╝██╔════╝██╔══██╗
     ██║   ██║██║   ██║██║     ██╔██╗ ██║███████║██║   ██║██╔██╗ ██║   ██║   █████╗  ██████╔╝
@@ -9,6 +9,6 @@ def print_banner():
      ╚████╔╝ ╚██████╔╝███████╗██║ ╚████║██║  ██║╚██████╔╝██║ ╚████║   ██║   ███████╗██║  ██║
       ╚═══╝   ╚═════╝ ╚══════╝╚═╝  ╚═══╝╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝   ╚═╝   ╚══════╝╚═╝  ╚═╝
     """
-    logger.raw(banner)
-    logger.raw("Advanced Web Application Security Scanner")
-    logger.raw("=" * 50)
+    logger .raw (banner )
+    logger .raw ("Advanced Web Application Security Scanner")
+    logger .raw ("="*50 )

@@ -1,159 +1,159 @@
-from modules.base import BaseScanner
-import os
-from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
-import html
+from modules .base import BaseScanner 
+import os 
+from urllib .parse import urlparse ,parse_qs ,urlencode ,urlunparse 
+import html 
 
-class XSSScanner(BaseScanner):
+class XSSScanner (BaseScanner ):
 
-    def __init__(self, target_url, session, config):
-        super().__init__(target_url, session, config)
+    def __init__ (self ,target_url ,session ,config ):
+        super ().__init__ (target_url ,session ,config )
 
-        # Prevent duplicates
-        self.seen_form_vulns = set()
-        self.seen_url_vulns = set()
 
-    # ============================
-    # MAIN SCAN LOGIC
-    # ============================
-    def scan(self, forms=None, urls=None):
-        self.logger.info(f"Scanning for XSS on {self.target_url}")
+        self .seen_form_vulns =set ()
+        self .seen_url_vulns =set ()
 
-        payloads = self.load_payloads("wordlists/xss_payloads.txt")
 
-        # -------------------------
-        # 1. FORM XSS TESTING
-        # -------------------------
-        if forms:
-            for form in forms:
-                result = self.scan_form_for_xss(form, payloads)
 
-                if result:
-                    field, payload, action = result
-                    vuln_id = f"{action}|{field}"
 
-                    # skip duplicates
-                    if vuln_id in self.seen_form_vulns:
-                        continue
+    def scan (self ,forms =None ,urls =None ):
+        self .logger .info (f"Scanning for XSS on {self .target_url }")
 
-                    self.seen_form_vulns.add(vuln_id)
+        payloads =self .load_payloads ("wordlists/xss_payloads.txt")
 
-                    # RAW text (stored safely)
-                    raw_desc = f"XSS found in form! Field: {field} | Payload: {payload} | Action: {action}"
 
-                    # SAFE text (escaped to prevent execution in HTML)
-                    safe_desc = html.escape(raw_desc)
 
-                    self.add_vulnerability("Cross-Site Scripting (XSS)", safe_desc, "High")
 
-        # -------------------------
-        # 2. URL XSS TESTING
-        # -------------------------
-        if urls:
-            for url in urls:
-                result = self.scan_url_for_xss(url, payloads)
+        if forms :
+            for form in forms :
+                result =self .scan_form_for_xss (form ,payloads )
 
-                if result:
-                    param, payload, test_url = result
+                if result :
+                    field ,payload ,action =result 
+                    vuln_id =f"{action }|{field }"
 
-                    parsed = urlparse(url)
-                    base_url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
 
-                    vuln_id = f"{base_url}|{param}"
+                    if vuln_id in self .seen_form_vulns :
+                        continue 
 
-                    if vuln_id in self.seen_url_vulns:
-                        continue
+                    self .seen_form_vulns .add (vuln_id )
 
-                    self.seen_url_vulns.add(vuln_id)
 
-                    # RAW text (complete full URL preserved)
-                    raw_desc = f"XSS found in URL! Param: {param} | Payload: {payload} | URL: {test_url}"
+                    raw_desc =f"XSS found in form! Field: {field } | Payload: {payload } | Action: {action }"
 
-                    # SAFE text (no XSS execution)
-                    safe_desc = html.escape(raw_desc)
 
-                    self.add_vulnerability("Cross-Site Scripting (XSS)", safe_desc, "High")
+                    safe_desc =html .escape (raw_desc )
 
-    # ============================
-    # LOAD PAYLOADS
-    # ============================
-    def load_payloads(self, path):
-        if os.path.exists(path):
-            with open(path, "r") as f:
-                return [p.strip() for p in f if p.strip()]
+                    self .add_vulnerability ("Cross-Site Scripting (XSS)",safe_desc ,"High")
+
+
+
+
+        if urls :
+            for url in urls :
+                result =self .scan_url_for_xss (url ,payloads )
+
+                if result :
+                    param ,payload ,test_url =result 
+
+                    parsed =urlparse (url )
+                    base_url =f"{parsed .scheme }://{parsed .netloc }{parsed .path }"
+
+                    vuln_id =f"{base_url }|{param }"
+
+                    if vuln_id in self .seen_url_vulns :
+                        continue 
+
+                    self .seen_url_vulns .add (vuln_id )
+
+
+                    raw_desc =f"XSS found in URL! Param: {param } | Payload: {payload } | URL: {test_url }"
+
+
+                    safe_desc =html .escape (raw_desc )
+
+                    self .add_vulnerability ("Cross-Site Scripting (XSS)",safe_desc ,"High")
+
+
+
+
+    def load_payloads (self ,path ):
+        if os .path .exists (path ):
+            with open (path ,"r")as f :
+                return [p .strip ()for p in f if p .strip ()]
         return [
-            "<script>alert(1)</script>",
-            "\"><script>alert(1)</script>",
-            "'><img src=x onerror=alert(1)>"
+        "<script>alert(1)</script>",
+        "\"><script>alert(1)</script>",
+        "'><img src=x onerror=alert(1)>"
         ]
 
-    # ============================
-    # REFLECTION DETECTION
-    # ============================
-    def detect_xss(self, response, payload):
-        body = response.text.lower()
 
-        # URL-encoded reflection
-        encoded = urlencode({"x": payload})[2:].lower()
-        if encoded in body:
-            return True
 
-        return False
 
-    # ============================
-    # FORM SCANNER
-    # ============================
-    def scan_form_for_xss(self, form, payloads):
+    def detect_xss (self ,response ,payload ):
+        body =response .text .lower ()
 
-        action = form.get("action")
-        inputs = form.get("inputs", [])
 
-        base_data = {i["name"]: "test" for i in inputs if i.get("name")}
+        encoded =urlencode ({"x":payload })[2 :].lower ()
+        if encoded in body :
+            return True 
 
-        for inp in inputs:
-            field = inp.get("name")
-            if not field:
-                continue
+        return False 
 
-            for payload in payloads:
 
-                test_data = base_data.copy()
-                test_data[field] = payload
 
-                response = self.session.post(action, data=test_data)
 
-                if self.detect_xss(response, payload):
-                    return (field, payload, action)
+    def scan_form_for_xss (self ,form ,payloads ):
 
-        return None
+        action =form .get ("action")
+        inputs =form .get ("inputs",[])
 
-    # ============================
-    # URL SCANNER
-    # ============================
-    def scan_url_for_xss(self, url, payloads):
+        base_data ={i ["name"]:"test"for i in inputs if i .get ("name")}
 
-        parsed = urlparse(url)
-        params = parse_qs(parsed.query)
+        for inp in inputs :
+            field =inp .get ("name")
+            if not field :
+                continue 
 
-        if not params:
-            return None
+            for payload in payloads :
 
-        for param in params:
+                test_data =base_data .copy ()
+                test_data [field ]=payload 
 
-            for payload in payloads:
+                response =self .session .post (action ,data =test_data )
 
-                test_params = params.copy()
-                test_params[param] = payload
+                if self .detect_xss (response ,payload ):
+                    return (field ,payload ,action )
 
-                test_query = urlencode(test_params, doseq=True)
+        return None 
 
-                test_url = urlunparse((
-                    parsed.scheme, parsed.netloc, parsed.path,
-                    parsed.params, test_query, parsed.fragment
+
+
+
+    def scan_url_for_xss (self ,url ,payloads ):
+
+        parsed =urlparse (url )
+        params =parse_qs (parsed .query )
+
+        if not params :
+            return None 
+
+        for param in params :
+
+            for payload in payloads :
+
+                test_params =params .copy ()
+                test_params [param ]=payload 
+
+                test_query =urlencode (test_params ,doseq =True )
+
+                test_url =urlunparse ((
+                parsed .scheme ,parsed .netloc ,parsed .path ,
+                parsed .params ,test_query ,parsed .fragment 
                 ))
 
-                response = self.session.get(test_url)
+                response =self .session .get (test_url )
 
-                if self.detect_xss(response, payload):
-                    return (param, payload, test_url)
+                if self .detect_xss (response ,payload ):
+                    return (param ,payload ,test_url )
 
-        return None
+        return None 
