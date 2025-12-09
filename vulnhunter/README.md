@@ -11,28 +11,28 @@ These modules gather critical information about the target before any aggressive
 - **Basic Info**: Retrieves HTTP headers, server info, and technology stack.
 - **WAF Detection**: Identifies the presence of Web Application Firewalls (active and passive detection).
 - **Headers Check**: Analyzes HTTP security headers (e.g., CSP, HSTS, X-Frame-Options) for misconfigurations.
-- **SSL/TLS Check**: Validates SSL certificates and checks for weak configurations.
-- **CORS Analysis**: Tests Cross-Origin Resource Sharing policies for security risks.
 - **Whois Lookup**: Fetches domain registration details.
+- **DNS Scanner**: Performs DNS enumeration and zone transfer checks.
+- **Tech Stack**: Identifies technologies used by the target application.
 - **Dirb Scanner**: Enumerates directories and files using wordlists.
 - **Cloud Storage**: Checks for exposed cloud storage buckets (AWS, GCP, Azure) related to the target.
 
 ### 🛡️ Vulnerability Testing Modules
 If no WAF is detected (or if the user explicitly approves), VulnHunter proceeds with active vulnerability testing:
 - **SQL Injection**: Tests input fields and URLs for SQL injection vulnerabilities.
-- **Brute Force**: Attempts to brute-force login forms using configurable wordlists.
+- **NoSQL Injection**: Tests for NoSQL injection vulnerabilities.
 - **XSS**: Cross-Site Scripting detection (Reflected/Stored).
+- **Brute Force**: Attempts to brute-force login forms using configurable wordlists.
 - **Open Redirect**: Checks for open redirection vulnerabilities.
 - **XXE**: XML External Entity injection testing.
 - **SSRF**: Server-Side Request Forgery detection.
-- **CRLF Injection**: Checks for HTTP Response Splitting.
-- **NoSQL Injection**: Tests for NoSQL injection vulnerabilities.
 - **SSTI**: Server-Side Template Injection detection.
-- **LFI/RFI**: Local and Remote File Inclusion testing.
 - **CSRF**: Cross-Site Request Forgery detection.
+- **CRLF Injection**: Checks for HTTP Response Splitting.
+- **SSL/TLS Check**: Validates SSL certificates and checks for weak configurations.
+- **CORS Analysis**: Tests Cross-Origin Resource Sharing policies for security risks.
 
 ### 📊 Reporting
-- **JSON Reports**: Detailed machine-readable output.
 - **JSON Reports**: Detailed machine-readable output.
 - **HTML Reports**: User-friendly HTML reports with severity levels, summaries, and a dedicated section for discovered files and directories.
 
@@ -47,8 +47,8 @@ The codebase is organized as follows:
   - `reporter.py`: Generates JSON and HTML reports.
   - `requester.py`: Handles HTTP requests with session management.
 - **`modules/`**: Pluggable scanner modules.
-  - `recon/`: Reconnaissance modules (Basic Info, WAF, SSL, etc.).
-  - `vuln/`: Vulnerability scanning modules (SQLi, Brute Force).
+  - `recon/`: Reconnaissance modules (Basic Info, WAF, DNS, etc.).
+  - `vuln/`: Vulnerability scanning modules (SQLi, Brute Force, XSS, etc.).
 - **`reports/`**: Output directory for generated scan reports.
 - **`utils/`**: Utility scripts (e.g., banner display).
 - **`wordlists/`**: Text files used for directory enumeration and brute-force attacks.
@@ -63,12 +63,18 @@ The codebase is organized as follows:
    cd vulnhunter
    ```
 
-2. **Install dependencies:**
+2. **Set up a virtual environment:**
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
+
+3. **Install dependencies:**
    ```bash
    pip install -r requirements.txt
    ```
 
-3. **Make the CLI executable (optional):**
+4. **Make the CLI executable (optional):**
    ```bash
    chmod +x cli.py
    ```
