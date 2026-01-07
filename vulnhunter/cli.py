@@ -92,7 +92,7 @@ def main (target_url ):
                 logger .error (f"Exception in recon scanner: {e }")
 
 
-    waf_detected =any (vuln ['type']=='WAF Detected (Active)'or vuln ['type']=='WAF Detected (Passive)'
+    waf_detected =any (vuln ['type']=='WAF Detected (Active Block)'or vuln ['type']=='WAF Detected (Passive Signature)'
     for scanner in recon_scanners for vuln in scanner .vulnerabilities )
 
     if waf_detected :
@@ -106,7 +106,9 @@ def main (target_url ):
             reporter .generate_json ()
             reporter .generate_html ()
             logger .success ("Recon report saved.")
-            return 
+            return
+    else:
+        logger .info ("No WAF detected. Proceeding with vulnerability testing.")
 
 
     logger .warning ("Crawling for forms and URLs...")
@@ -130,7 +132,7 @@ def main (target_url ):
         SSRFScanner (target_url ,requester .session ,config ),
         # SSTIScanner (target_url ,requester .session ,config ),
         CSRFScanner (target_url ,requester .session ,config ),
-        XSSScanner (target_url ,requester .session ,config )
+        # XSSScanner (target_url ,requester .session ,config )
     ]
 
     with concurrent .futures .ThreadPoolExecutor (max_workers =max_threads )as executor :
